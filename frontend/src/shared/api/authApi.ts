@@ -3,12 +3,12 @@ import type { AuthResponseDto, LoginDto, RegisterDto } from '../types';
 
 export const authApi = {
   register: async (data: RegisterDto): Promise<AuthResponseDto> => {
-    const response = await client.post('/api/auth/register', data);
+    const response = await client.post('/auth/register', data);
     return response.data;
   },
 
   login: async (data: LoginDto): Promise<AuthResponseDto> => {
-    const response = await client.post('/api/auth/login', data);
+    const response = await client.post('/auth/login', data);
     return response.data;
   },
 };
