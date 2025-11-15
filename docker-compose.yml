@@ -1,0 +1,23 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: school-swedish-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: school_swedish
+      MYSQL_USER: school_user
+      MYSQL_PASSWORD: school_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - school-network
+
+volumes:
+  mysql_data:
+
+networks:
+  school-network:
+    driver: bridge
