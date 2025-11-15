@@ -26,7 +26,8 @@ namespace SchoolSwedishAPI.Services
                 new Claim(ClaimTypes.Surname, user.LastName)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:Secret"]));
+            var secretKey = _config["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret configuration is missing");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
             var tokenDescriptor = new SecurityTokenDescriptor

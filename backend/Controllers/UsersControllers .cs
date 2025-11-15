@@ -135,7 +135,9 @@ namespace SchoolSwedishAPI.Controllers
         {
             try
             {
-                var userId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? throw new UnauthorizedAccessException("User ID claim not found");
+                var userId = int.Parse(userIdClaim);
                 _logger.LogInformation("Запрос профиля пользователя ID: {UserId}", userId);
 
                 var user = await _context.Users

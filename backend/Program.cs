@@ -25,12 +25,15 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+// Add FluentValidation validators (suppress obsolete warning - v11.3.1 still works)
+#pragma warning disable CS0618
 builder.Services.AddControllers()
-    .AddFluentValidation(fv =>  
+    .AddFluentValidation(fv =>
     {
         fv.RegisterValidatorsFromAssemblyContaining<Program>();
         fv.AutomaticValidationEnabled = true;
     });
+#pragma warning restore CS0618
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -68,11 +71,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        var jwtSecret = builder.Configuration["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret configuration is missing");
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                .GetBytes(builder.Configuration["JWT:Secret"])),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
             ValidateIssuer = false,
             ValidateAudience = false,
             ValidateLifetime = true,
@@ -95,12 +98,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             },
             OnTokenValidated = context =>
             {
-                Console.WriteLine($"Token validated! User: {context.Principal.Identity.Name}");
+                var userName = context.Principal?.Identity?.Name ?? "Unknown";
+                Console.WriteLine($"Token validated! User: {userName}");
                 return Task.CompletedTask;
             },
             OnForbidden = context =>
             {
-                Console.WriteLine($"Access forbidden for: {context.HttpContext.User.Identity.Name}");
+                var userName = context.HttpContext.User.Identity?.Name ?? "Unknown";
+                Console.WriteLine($"Access forbidden for: {userName}");
                 return Task.CompletedTask;
             }
         };
@@ -122,6 +127,68 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Create database and tables if they don't exist
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    context.Database.EnsureCreated();
+    Log.Information("Database tables created or verified");
+
+    // Seed database if empty
+    if (!context.Users.Any())
+    {
+        Log.Information("Seeding database with initial data...");
+
+        var users = new List<SchoolSwedishAPI.Models.User>
+        {
+            new SchoolSwedishAPI.Models.User { Email = "admin@school.com", FirstName = "Админ", LastName = "Системный", Role = "Admin", PasswordHash = BCrypt.Net.BCrypt.HashPassword("temp123"), CreatedAt = DateTime.UtcNow, IsActive = true },
+            new SchoolSwedishAPI.Models.User { Email = "teacher@school.com", FirstName = "Анна", LastName = "Преподаватель", Role = "Teacher", PasswordHash = BCrypt.Net.BCrypt.HashPassword("temp123"), CreatedAt = DateTime.UtcNow, IsActive = true },
+            new SchoolSwedishAPI.Models.User { Email = "student1@school.com", FirstName = "Иван", LastName = "Студентов", Role = "Student", PasswordHash = BCrypt.Net.BCrypt.HashPassword("temp123"), CreatedAt = DateTime.UtcNow, IsActive = true },
+            new SchoolSwedishAPI.Models.User { Email = "student2@school.com", FirstName = "Мария", LastName = "Ученикова", Role = "Student", PasswordHash = BCrypt.Net.BCrypt.HashPassword("temp123"), CreatedAt = DateTime.UtcNow, IsActive = true }
+        };
+
+        context.Users.AddRange(users);
+        context.SaveChanges();
+
+        var teacher = users.First(u => u.Role == "Teacher");
+        var courses = new List<SchoolSwedishAPI.Models.Course>
+        {
+            new SchoolSwedishAPI.Models.Course { Title = "Шведский для начинающих", Description = "Базовый курс шведского языка", Level = "Beginner", Price = 5000, DurationHours = 40, TeacherId = teacher.Id, CreatedAt = DateTime.UtcNow },
+            new SchoolSwedishAPI.Models.Course { Title = "Разговорный шведский", Description = "Развитие разговорных навыков", Level = "Intermediate", Price = 7000, DurationHours = 30, TeacherId = teacher.Id, CreatedAt = DateTime.UtcNow }
+        };
+
+        context.Courses.AddRange(courses);
+        context.SaveChanges();
+
+        var students = users.Where(u => u.Role == "Student").ToList();
+        var enrollments = new List<SchoolSwedishAPI.Models.Enrollment>();
+
+        foreach (var student in students)
+        {
+            foreach (var course in courses)
+            {
+                enrollments.Add(new SchoolSwedishAPI.Models.Enrollment
+                {
+                    StudentId = student.Id,
+                    CourseId = course.Id,
+                    EnrolledAt = DateTime.UtcNow,
+                    Progress = (decimal?)new Random().Next(10, 90),
+                    Status = "Active"
+                });
+            }
+        }
+
+        context.Enrollments.AddRange(enrollments);
+        context.SaveChanges();
+
+        Log.Information("Database seeded with 4 users, 2 courses, and enrollments");
+    }
+    else
+    {
+        Log.Information("Database already contains data, skipping seed");
+    }
+}
 
 Log.Information("School Swedish API запущено!");
 Log.Information("База данных: {Connection}", builder.Configuration.GetConnectionString("DefaultConnection"));

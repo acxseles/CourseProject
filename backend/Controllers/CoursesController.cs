@@ -43,7 +43,7 @@ namespace SchoolSwedishAPI.Controllers
                 // Поиск по названию
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(c => c.Title.Contains(search) || c.Description.Contains(search));
+                    query = query.Where(c => (c.Title ?? "").Contains(search) || (c.Description ?? "").Contains(search));
                     _logger.LogInformation("Поиск по запросу: {Search}", search);
                 }
 
@@ -58,12 +58,12 @@ namespace SchoolSwedishAPI.Controllers
                     .Select(c => new CourseDto
                     {
                         Id = c.Id,
-                        Title = c.Title,
-                        Description = c.Description,
-                        Level = c.Level,
+                        Title = c.Title ?? "",
+                        Description = c.Description ?? "",
+                        Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
-                        TeacherName = "Oxana" 
+                        TeacherName = "Oxana"
                     })
                     .ToListAsync();
 
@@ -98,9 +98,9 @@ namespace SchoolSwedishAPI.Controllers
                     .Select(c => new CourseDto
                     {
                         Id = c.Id,
-                        Title = c.Title,
-                        Description = c.Description,
-                        Level = c.Level,
+                        Title = c.Title ?? "",
+                        Description = c.Description ?? "",
+                        Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
                         TeacherName = "System"
