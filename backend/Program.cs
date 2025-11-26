@@ -194,15 +194,20 @@ Log.Information("School Swedish API запущено!");
 Log.Information("База данных: {Connection}", builder.Configuration.GetConnectionString("DefaultConnection"));
 Log.Information("Environment: {Environment}", app.Environment.EnvironmentName);
 
+//app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "School Swedish API v1");
+        c.RoutePrefix = "swagger";
+    });
     Log.Information("Swagger доступен по /swagger");
 }
 
-//app.UseHttpsRedirection();
-app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
