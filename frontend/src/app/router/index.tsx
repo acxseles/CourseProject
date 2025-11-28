@@ -12,6 +12,10 @@ import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
 import { DashboardPage } from '@/pages/dashboard';
 
+// СОЗДАЙ ЭТИ КОМПОНЕНТЫ (или импортируй если уже есть):
+const MyCoursesPage = () => <div><h1>Мои курсы</h1></div>;
+const SettingsPage = () => <div><h1>Настройки</h1></div>;
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -35,7 +39,15 @@ export const router = createBrowserRouter([
         index: true,
         element: <DashboardPage />,
       },
-      // NOTE: Add other dashboard pages here (e.g., my-courses, settings)
+      // ДОБАВЬ ЭТИ МАРШРУТЫ:
+      {
+        path: 'my-courses',
+        element: <MyCoursesPage />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage />,
+      },
     ],
   },
   {

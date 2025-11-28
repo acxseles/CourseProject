@@ -31,7 +31,9 @@ namespace SchoolSwedishAPI.Controllers
                 _logger.LogInformation("Запрос списка курсов. Page: {Page}, PageSize: {PageSize}",
                     pagination.Page, pagination.PageSize);
 
-                var query = _context.Courses.AsQueryable();
+                var query = _context.Courses
+                    .Include(c => c.Teacher)
+                    .AsQueryable();
 
                 // Фильтрация по уровню
                 if (!string.IsNullOrEmpty(level))
@@ -63,7 +65,7 @@ namespace SchoolSwedishAPI.Controllers
                         Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
-                        TeacherName = "Oxana"
+                        TeacherName = c.Teacher.FirstName + " " + c.Teacher.LastName
                     })
                     .ToListAsync();
 
@@ -95,6 +97,7 @@ namespace SchoolSwedishAPI.Controllers
 
                 var course = await _context.Courses
                     .Where(c => c.Id == id)
+                    .Include(c => c.Teacher)
                     .Select(c => new CourseDto
                     {
                         Id = c.Id,
@@ -103,7 +106,7 @@ namespace SchoolSwedishAPI.Controllers
                         Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
-                        TeacherName = "System"
+                        TeacherName = c.Teacher.FirstName + " " + c.Teacher.LastName
                     })
                     .FirstOrDefaultAsync();
 
@@ -152,8 +155,7 @@ namespace SchoolSwedishAPI.Controllers
                     Description = course.Description,
                     Level = course.Level,
                     Price = course.Price,
-                    DurationHours = course.DurationHours,
-                    TeacherName = "Oxana" 
+                    DurationHours = course.DurationHours
                 });
             }
             catch (Exception ex)
