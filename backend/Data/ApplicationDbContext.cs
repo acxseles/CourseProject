@@ -124,7 +124,7 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasOne(d => d.Student).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.StudentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("enrollments_ibfk_1");
         });
 

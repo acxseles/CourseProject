@@ -5,6 +5,7 @@ using SchoolSwedishAPI.DTOs;
 using SchoolSwedishAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
+using System.Security.Claims;
 
 namespace SchoolSwedishAPI.Controllers
 {
@@ -169,32 +170,55 @@ namespace SchoolSwedishAPI.Controllers
             }
         }
 
-        // DELETE: api/users/5
-        [HttpDelete("{id}")]
+        // DELETE: api/users/
+        [HttpDelete("student/{id}")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteStudent(int id)
         {
             try
             {
-                _logger.LogInformation("Запрос на удаление пользователя ID: {UserId}", id);
+                _logger.LogInformation("Удаление студента {StudentId}", id);
 
-                var user = await _context.Users.FindAsync(id);
-                if (user == null)
+                // Ищем студента
+                var student = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == id && u.Role == "Student");
+
+                if (student == null)
                 {
-                    _logger.LogWarning("Пользователь для удаления не найден ID: {UserId}", id);
-                    return NotFound(new { message = "Пользователь не найден" });
+                    return NotFound(new { message = "Студент не найден" });
                 }
 
-                _context.Users.Remove(user);
+                // Меняем статус записей на "Dropped" вместо удаления
+                var studentEnrollments = await _context.Enrollments
+                    .Where(e => e.StudentId == id && e.Status == "Active")
+                    .ToListAsync();
+
+                if (studentEnrollments.Any())
+                {
+                    foreach (var enrollment in studentEnrollments)
+                    {
+                        enrollment.Status = "Dropped";
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                // Удаляем студента
+                _context.Users.Remove(student);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Пользователь удален: {Email} (ID: {UserId})", user.Email, user.Id);
-                return NoContent();
+                _logger.LogInformation("Студент {StudentId} удален, {Count} записей помечено как Dropped",
+                    id, studentEnrollments.Count);
+
+                return Ok(new
+                {
+                    message = "Студент успешно удален",
+                    droppedEnrollments = studentEnrollments.Count
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при удалении пользователя ID: {UserId}", id);
-                return StatusCode(500, new { message = "Ошибка при удалении пользователя" });
+                _logger.LogError(ex, "Ошибка при удалении студента {StudentId}", id);
+                return StatusCode(500, new { message = "Ошибка при удалении студента" });
             }
         }
     }
