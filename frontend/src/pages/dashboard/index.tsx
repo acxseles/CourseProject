@@ -10,16 +10,28 @@ export const DashboardPage = () => {
             {/* Welcome Header */}
             <div className="mb-6 lg:mb-8">
                 <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
-                    Добро пожаловать, <span className="bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent">{user?.firstName}</span>!
+                    Добро пожаловать,{' '}
+                    <span className="bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent">
+                        {user?.firstName}
+                    </span>
+                    !
                 </h1>
                 <p className="text-base sm:text-lg text-foreground/70">
-                    Ваше путешествие по изучению шведского языка начинается здесь.
+                    Ваше путешествие по изучению шведского языка начинается
+                    здесь.
                 </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                 {/* Left Column: User Profile */}
-                <div className="lg:col-span-2 rounded-2xl border shadow-sm hover:shadow-lg transition-shadow duration-300 p-6 sm:p-8" style={{backgroundColor: 'var(--bg-primary)', borderColor: 'var(--color-border)', color: 'var(--text-primary)'}}>
+                <div
+                    className="lg:col-span-2 rounded-2xl border shadow-sm hover:shadow-lg transition-shadow duration-300 p-6 sm:p-8"
+                    style={{
+                        backgroundColor: 'var(--bg-primary)',
+                        borderColor: 'var(--color-border)',
+                        color: 'var(--text-primary)',
+                    }}
+                >
                     <div className="flex items-center gap-4 mb-6 sm:mb-8">
                         <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-accent-400 flex items-center justify-center">
                             <User className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
@@ -70,7 +82,7 @@ export const DashboardPage = () => {
                                     Роль в системе
                                 </p>
                                 <span
-                                    className={`inline-block px-4 sm:px-6 py-2 rounded-full font-semibold text-sm sm:text-base bg-gradient-to-r from-primary-100 to-secondary-100 text-foreground`}
+                                    className={`inline-block px-4 sm:px-6 py-2 rounded-full font-semibold text-sm sm:text-base bg-linear-to-r from-primary-100 to-secondary-100 text-foreground`}
                                 >
                                     {user?.role === 'Student'
                                         ? 'Студент'
@@ -106,7 +118,14 @@ export const DashboardPage = () => {
                     </div>
 
                     {/* Courses Section */}
-                    <div className="rounded-2xl border shadow-sm hover:shadow-lg transition-shadow duration-300 p-6 sm:p-8" style={{backgroundColor: 'var(--bg-primary)', borderColor: 'var(--color-border)', color: 'var(--text-primary)'}}>
+                    <div
+                        className="rounded-2xl border shadow-sm hover:shadow-lg transition-shadow duration-300 p-6 sm:p-8"
+                        style={{
+                            backgroundColor: 'var(--bg-primary)',
+                            borderColor: 'var(--color-border)',
+                            color: 'var(--text-primary)',
+                        }}
+                    >
                         <div className="flex items-center gap-4 mb-6">
                             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-accent-400 flex items-center justify-center">
                                 <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
@@ -127,7 +146,8 @@ export const DashboardPage = () => {
                                 Пока нет активных курсов
                             </p>
                             <p className="text-sm sm:text-base text-foreground/60 max-w-md mx-auto">
-                                Перейдите в каталог, чтобы выбрать и записаться на курс.
+                                Перейдите в каталог, чтобы выбрать и записаться
+                                на курс.
                             </p>
                         </div>
                     </div>

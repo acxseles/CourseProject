@@ -163,7 +163,7 @@ export const LandingPage = () => {
                                     className="group p-8 rounded-2xl border hover:border-primary-300 hover:shadow-xl transition-all duration-300"
                                     style={{backgroundColor: 'var(--bg-primary)', borderColor: 'var(--color-border)', color: 'var(--text-primary)'}}
                                 >
-                                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                    <div className="w-16 h-16 rounded-xl bg-linear-to-br from-primary-500 to-accent-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                         <Icon className="w-8 h-8 text-white" />
                                     </div>
                                     <h3 className="text-xl font-bold text-foreground mb-3">
@@ -246,7 +246,7 @@ export const LandingPage = () => {
                                 style={{backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)'}}
                             >
                                 <div
-                                    className={`bg-gradient-to-br ${course.gradient} h-40 relative`}
+                                    className={`bg-linear-to-br ${course.gradient} h-40 relative`}
                                 >
                                     {course.featured && (
                                         <div className="absolute top-4 right-4">
@@ -285,7 +285,7 @@ export const LandingPage = () => {
                                                         key={idx}
                                                         className="flex items-start gap-2"
                                                     >
-                                                        <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                                        <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                                                         <span className="text-sm text-foreground/70">
                                                             {feature}
                                                         </span>
