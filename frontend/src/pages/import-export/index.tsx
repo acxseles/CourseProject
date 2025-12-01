@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { importExportApi } from '@/shared/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/shared/ui';
 import { Download, Upload, FileUp, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 
 export const ImportExportPage = () => {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -32,16 +35,24 @@ export const ImportExportPage = () => {
 
   const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    console.log('File selected:', file?.name);
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
 
     try {
+      console.log('Starting import for file:', file.name);
       setImportLoading(true);
       const courses = await importExportApi.importCoursesFromExcel(file);
+      console.log('Import successful, courses:', courses);
       setImportedCount(courses.length);
       setMessage({
         type: 'success',
         text: `${courses.length} курсов успешно импортировано`,
       });
+      // Invalidate courses cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     } catch (error) {
       console.error('Import failed:', error);
       setMessage({ type: 'error', text: 'Ошибка при импорте курсов' });
@@ -153,6 +164,7 @@ export const ImportExportPage = () => {
 
             <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:bg-blue-50 transition-colors cursor-pointer relative">
               <input
+                ref={fileInputRef}
                 type="file"
                 onChange={handleImportExcel}
                 disabled={importLoading}
@@ -169,7 +181,10 @@ export const ImportExportPage = () => {
             </div>
 
             <Button
-              onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
+              onClick={() => {
+                console.log('Button clicked, triggering file input');
+                fileInputRef.current?.click();
+              }}
               disabled={importLoading}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >

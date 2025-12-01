@@ -76,6 +76,14 @@ export const Sidebar = () => {
                 {user?.role === 'Admin' && (
                     <>
                         <Link
+                            to="/courses"
+                            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
+                            style={isActive('/courses') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
+                        >
+                            <BookOpen className="w-5 h-5" />
+                            <span>Каталог курсов</span>
+                        </Link>
+                        <Link
                             to="/dashboard/admin"
                             className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
                             style={isActive('/dashboard/admin') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}

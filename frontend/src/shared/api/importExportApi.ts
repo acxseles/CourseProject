@@ -24,6 +24,6 @@ export const importExportApi = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data;
+    return response.data.courses || [];
   },
 };

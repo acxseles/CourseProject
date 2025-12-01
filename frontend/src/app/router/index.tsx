@@ -50,7 +50,7 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <ProtectedRoute requiredRoles={['Student']}>
+          <ProtectedRoute requiredRoles={['Student', 'Admin']}>
             <CourseCatalogPage />
           </ProtectedRoute>
         ),

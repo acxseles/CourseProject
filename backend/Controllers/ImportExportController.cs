@@ -10,24 +10,30 @@ using System.Security.Claims;  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿
 namespace SchoolSwedishAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/import-export")]
 public class ImportExportController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ImportExportController> _logger;
     private readonly PdfExportService _pdfService;
 
-    public ImportExportController(ApplicationDbContext context, ILogger<ImportExportController> logger)
+    public ImportExportController(ApplicationDbContext context, ILogger<ImportExportController> logger, PdfExportService pdfService)
     {
         _context = context;
         _logger = logger;
-        _pdfService = new PdfExportService();
+        _pdfService = pdfService;
     }
 
     [HttpGet("test")]
     public IActionResult Test()
     {
         return Ok("ImportExport controller is working!");
+    }
+
+    [HttpGet("export-all-pdf")]
+    public IActionResult ExportAllPdfSimple()
+    {
+        return Ok(new { message = "Simple PDF export works" });
     }
 
     // PDF ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
@@ -70,41 +76,45 @@ public class ImportExportController : ControllerBase
     [HttpGet("export/courses/pdf")]
     public async Task<IActionResult> ExportAllCoursesPdf()
     {
+        _logger.LogInformation("ExportAllCoursesPdf method called!");
         try
         {
-            _logger.LogInformation("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ PDF");
+            _logger.LogInformation("Starting to fetch courses for PDF export");
 
             var courses = await _context.Courses
                 .Include(c => c.Teacher)
                 .OrderBy(c => c.Title)
                 .ToListAsync();
 
-            _logger.LogInformation("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ {Count} ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", courses.Count);
+            _logger.LogInformation("Fetched {Count} courses", courses.Count);
 
             var pdfBytes = _pdfService.GenerateCoursesListPdf(courses);
 
-            _logger.LogInformation("PDF ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: {Size} ï¿½ï¿½ï¿½ï¿½", pdfBytes.Length);
+            _logger.LogInformation("PDF generated successfully, size: {Size} bytes", pdfBytes.Length);
 
             return File(pdfBytes, "application/pdf",
                 $"courses_catalog_{DateTime.Now:yyyyMMdd}.pdf");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ PDF. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: {Message}",
+            _logger.LogError(ex, "Error exporting courses to PDF. Message: {Message}",
                 ex.Message);
-            return StatusCode(500, new { message = $"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ PDF: {ex.Message}" });
+            return StatusCode(500, new { message = $"Error generating PDF: {ex.Message}" });
         }
     }
 
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Excel - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // Import courses from Excel - Admin only
     [HttpPost("import/courses/excel")]
-    [Authorize(Roles = "Admin,Teacher")]  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult> ImportCoursesFromExcel(IFormFile file)
     {
+        _logger.LogInformation("========== ImportCoursesFromExcel called ==========");
+        _logger.LogInformation("File object: {File}, IsNull: {IsNull}", file?.FileName ?? "null", file == null);
         try
         {
-            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ID ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            // Get current user ID from JWT token
             var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            _logger.LogInformation("Current user claim: {Claim}", currentUserIdClaim ?? "null");
             if (string.IsNullOrEmpty(currentUserIdClaim))
             {
                 return Unauthorized(new { message = "ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" });
@@ -136,15 +146,30 @@ public class ImportExportController : ControllerBase
 
             using var workbook = new XLWorkbook(stream);
             var worksheet = workbook.Worksheet(1);
-            var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            if (worksheet == null)
+            {
+                _logger.LogWarning("Worksheet 1 not found in Excel file");
+                return BadRequest(new { message = "Worksheet not found in Excel file" });
+            }
 
-            int rowNumber = 2; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+            var rangeUsed = worksheet.RangeUsed();
+            if (rangeUsed == null)
+            {
+                _logger.LogInformation("No data found in worksheet");
+                return Ok(new { message = "No data found in worksheet", importedCount = 0, courses = new List<object>() });
+            }
+
+            var rows = rangeUsed.RowsUsed().Skip(1); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+
+            int rowNumber = 2; // Starting from row 2 (after header)
+            _logger.LogInformation("Total rows to process: {RowCount}", rows.Count());
             foreach (var row in rows)
             {
                 try
                 {
                     var title = row.Cell(1).GetValue<string>()?.Trim();
                     var description = row.Cell(2).GetValue<string>()?.Trim();
+                    _logger.LogInformation("Row {RowNumber}: title='{Title}', description='{Description}'", rowNumber, title, description);
 
                     // ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Level
                     var levelValue = row.Cell(3).GetValue<string>()?.Trim();
@@ -157,10 +182,29 @@ public class ImportExportController : ControllerBase
 
                     var price = row.Cell(4).GetValue<decimal>();
                     var durationHours = row.Cell(5).GetValue<int>();
-                    var maxStudents = row.Cell(6).GetValue<int?>();
+
+                    // MaxStudents is optional - handle conversion carefully
+                    int? maxStudents = null;
+                    try
+                    {
+                        var maxStudentsCell = row.Cell(6);
+                        var strValue = maxStudentsCell.GetValue<string>()?.Trim();
+                        if (!string.IsNullOrEmpty(strValue) && int.TryParse(strValue, out int parsedValue))
+                        {
+                            maxStudents = parsedValue;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning("Could not parse maxStudents in row {RowNumber}: {Error}", rowNumber, ex.Message);
+                    }
+
                     var teacherEmail = row.Cell(7).GetValue<string>()?.Trim();
 
-                    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
+                    _logger.LogInformation("Row {RowNumber} values: level='{Level}', price={Price}, durationHours={Duration}, maxStudents={MaxStudents}, teacherEmail='{TeacherEmail}'",
+                        rowNumber, levelValue, price, durationHours, maxStudents, teacherEmail);
+
+                    // Validate required fields
                     if (string.IsNullOrEmpty(title))
                     {
                         _logger.LogWarning("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ {RowNumber}: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½", rowNumber);

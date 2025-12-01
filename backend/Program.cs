@@ -114,6 +114,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<PdfExportService>();
 
 builder.Services.AddCors(options =>
 {
@@ -211,6 +212,16 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Log all registered endpoints
+var endpointDataSource = app.Services.GetRequiredService<Microsoft.AspNetCore.Routing.EndpointDataSource>();
+foreach (var endpoint in endpointDataSource.Endpoints)
+{
+    if (endpoint is Microsoft.AspNetCore.Routing.RouteEndpoint routeEndpoint)
+    {
+        Log.Information("Registered endpoint: {Route}", routeEndpoint.RoutePattern);
+    }
+}
 
 try
 {
