@@ -13,11 +13,20 @@ interface AuthState {
   initializeAuth: () => void;
 }
 
+// Initialize auth state from localStorage immediately
+const getInitialState = () => {
+  const token = tokenService.getToken();
+  const user = tokenService.getUser();
+  return {
+    user: user || null,
+    token: token || null,
+    isLoading: false,
+    isAuthenticated: !!(token && user),
+  };
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
-  isLoading: false,
-  isAuthenticated: false,
+  ...getInitialState(),
 
   setAuth: (data: AuthResponseDto) => {
     tokenService.saveToken(data.token);

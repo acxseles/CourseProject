@@ -8,10 +8,18 @@ import { UserPlus } from 'lucide-react';
 
 const registerSchema = z.object({
   email: z.string().email('Некорректный email'),
-  password: z.string().min(3, 'Пароль должен быть минимум 3 символа'),
-  firstName: z.string().min(2, 'Имя должно быть минимум 2 символа'),
-  lastName: z.string().min(2, 'Фамилия должна быть минимум 2 символа'),
-  role: z.enum(['Student', 'Teacher', 'Admin'] as const),
+  password: z.string()
+    .min(6, 'Пароль должен быть минимум 6 символов')
+    .regex(/[A-Z]/, 'Пароль должен содержать хотя бы одну заглавную букву')
+    .regex(/[a-z]/, 'Пароль должен содержать хотя бы одну строчную букву')
+    .regex(/[0-9]/, 'Пароль должен содержать хотя бы одну цифру'),
+  firstName: z.string()
+    .min(2, 'Имя должно быть минимум 2 символа')
+    .regex(/^[a-zA-Zа-яА-Я]+$/, 'Имя может содержать только буквы'),
+  lastName: z.string()
+    .min(2, 'Фамилия должна быть минимум 2 символа')
+    .regex(/^[a-zA-Zа-яА-Я]+$/, 'Фамилия может содержать только буквы'),
+  role: z.enum(['Student', 'Teacher'] as const),
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -88,11 +96,9 @@ export const RegisterForm = () => {
           <label className="block text-sm font-semibold text-foreground mb-4">Выберите вашу роль</label>
           <div className="grid grid-cols-2 gap-3 mb-4">
             {roles.map((role) => (
-              <button
+              <label
                 key={role.value}
-                type="button"
-                onClick={() => registerField('role').onChange(role.value as any)}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                className={`p-4 rounded-xl border-2 transition-all text-left cursor-pointer ${
                   selectedRole === role.value
                     ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-accent-50'
                     : 'border-border hover:border-primary-300'
@@ -107,16 +113,21 @@ export const RegisterForm = () => {
                     : {}
                 }
               >
+                <input
+                  type="radio"
+                  value={role.value}
+                  {...registerField('role')}
+                  className="sr-only"
+                />
                 <p className={`font-semibold ${selectedRole === role.value ? 'bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent' : 'text-foreground'}`}>
                   {role.label}
                 </p>
                 <p className={`text-sm mt-1 ${selectedRole === role.value ? 'text-primary-600' : 'text-foreground/60'}`}>
                   {role.description}
                 </p>
-              </button>
+              </label>
             ))}
           </div>
-          <input type="hidden" {...registerField('role')} value={selectedRole} />
         </div>
 
         <Button

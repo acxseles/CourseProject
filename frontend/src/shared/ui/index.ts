@@ -18,3 +18,4 @@ export { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 
 // Custom components
 export { ThemeSwitcher } from './ThemeSwitcher'
+export { Modal } from './Modal'

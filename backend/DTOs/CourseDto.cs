@@ -8,6 +8,7 @@
         public string Level { get; set; } = string.Empty;
         public decimal? Price { get; set; }
         public int DurationHours { get; set; }
+        public int TeacherId { get; set; }
         public string TeacherName { get; set; } = string.Empty;
     }
 }

@@ -20,6 +20,7 @@ export interface Course {
   level: CourseLevel;
   price: number;
   durationHours: number;
+  teacherId?: number;
   teacherName: string;
   createdAt?: string;
 }

@@ -67,6 +67,7 @@ namespace SchoolSwedishAPI.Controllers
                         Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
+                        TeacherId = c.TeacherId,
                         TeacherName = c.Teacher.FirstName + " " + c.Teacher.LastName
                     })
                     .ToListAsync();
@@ -108,6 +109,7 @@ namespace SchoolSwedishAPI.Controllers
                         Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
+                        TeacherId = c.TeacherId,
                         TeacherName = c.Teacher.FirstName + " " + c.Teacher.LastName
                     })
                     .FirstOrDefaultAsync();
@@ -135,7 +137,8 @@ namespace SchoolSwedishAPI.Controllers
             try
             {
                 // ПОЛУЧАЕМ ID ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ ИЗ JWT ТОКЕНА
-                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var currentUserId = int.Parse(userIdString);
 
                 _logger.LogInformation("Создание нового курса: {Title} пользователем {UserId}",
                     createCourseDto.Title, currentUserId);
@@ -168,6 +171,7 @@ namespace SchoolSwedishAPI.Controllers
                         Level = c.Level ?? "",
                         Price = c.Price,
                         DurationHours = c.DurationHours,
+                        TeacherId = c.TeacherId,
                         TeacherName = c.Teacher.FirstName + " " + c.Teacher.LastName
                     })
                     .FirstOrDefaultAsync();
@@ -187,7 +191,8 @@ namespace SchoolSwedishAPI.Controllers
         {
             try
             {
-                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var currentUserId = int.Parse(userIdString);
                 var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
                 _logger.LogInformation("Попытка удаления курса {CourseId} пользователем {UserId}", id, currentUserId);

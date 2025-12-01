@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **School Swedish** is a full-stack online learning platform for teaching and learning Swedish language. It features user authentication (Student/Teacher/Admin roles), course management, student enrollment, lesson delivery, assignments, and progress tracking.
 
 **Tech Stack:**
-- **Frontend:** React 19 + TypeScript, Vite, Tailwind CSS, TanStack Query, Zustand, shadcn/ui
-- **Backend:** ASP.NET Core 8, Entity Framework Core, MySQL 8.0
-- **Infrastructure:** Docker Compose for database orchestration
+- **Frontend:** React 19 + TypeScript, Vite, Tailwind CSS v4 (CSS-first), TanStack Query, Zustand, Lucide React
+- **Backend:** ASP.NET Core 8, Entity Framework Core, MySQL 8.0, FluentValidation, JWT Auth
+- **Infrastructure:** Docker Compose for MySQL 8.0 database
 
 ## Development Commands
 
@@ -85,24 +85,37 @@ src/
 ### Backend Architecture (Layered MVC)
 
 ```
-Controllers/              # HTTP endpoints: AuthController, CoursesController, UsersController
+Controllers/              # HTTP endpoints
+├── AuthController       # Registration, login, token refresh
+├── CoursesController    # Course CRUD and listing
+├── EnrollmentsController # Student enrollment management
+├── UsersController      # User profile and management
+├── ImportExportController # PDF export, course import
+└── SeedController       # Database seeding
 ↓
-Services/                 # Business logic: TokenService for JWT generation
+Services/                # Business logic
+├── TokenService         # JWT token generation (7-day expiry)
+└── [Feature Services]   # Domain-specific logic (future)
 ↓
-Validators/               # FluentValidation: auto-validates DTOs before controller
+Validators/              # FluentValidation
+└── [DTOs].Validator     # Auto-validates request DTOs
 ↓
-Data/                     # ApplicationDbContext: EF Core with 7 DbSets, auto migrations
+Models/                  # Entity Framework entities
+├── User, Course, Enrollment, Lesson
+├── Assignment, StudentAssignment, Report
 ↓
-Database/                 # MySQL with normalized schema (User, Course, Enrollment, Lesson, Assignment, etc.)
+Data/                    # ApplicationDbContext (EF Core)
+└── MySQL Database       # Normalized schema with 7+ tables
 ```
 
 **Key Patterns:**
 - **Dependency Injection:** All services registered in `Program.cs`, constructor-injected into controllers
 - **Entity Framework Core:** Auto-creates/seeds database on startup via `context.Database.EnsureCreated()`
-- **FluentValidation:** Validators registered globally, auto-validate request DTOs
-- **JWT Authentication:** `TokenService.CreateToken()` generates 7-day tokens with user claims
-- **CORS:** Configured for `localhost:5173` and `localhost:3000` in `Program.cs`
-- **Logging:** Serilog structured logging to console and daily rolling files in `logs/` directory
+- **FluentValidation:** Validators auto-registered and auto-validate request DTOs
+- **JWT Authentication:** `TokenService.CreateToken()` generates tokens with user claims
+- **CORS:** Configured for `localhost:5173` in `Program.cs` (update for production)
+- **Logging:** Serilog structured logging to console and rolling files in `logs/` directory
+- **Data Import/Export:** ImportExportController handles course imports and PDF exports
 
 ### Authentication Flow
 
@@ -159,14 +172,18 @@ VITE_JWT_SECRET_KEY=super-secret-key-minimum-64-characters-long-for-jwt-security
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| Frontend Root | `frontend/src/App.tsx` | QueryClientProvider, theme, auth init |
-| Frontend Routes | `frontend/src/app/router/index.tsx` | Route definitions, ProtectedRoute wrapper |
-| Frontend Auth | `frontend/src/features/auth/store.ts` | Zustand state (user, token, isAuthenticated) |
-| Frontend API | `frontend/src/shared/api/client.ts` | Axios instance with interceptors |
-| Backend Root | `backend/Program.cs` | DI, middleware, EF Core setup, seeding |
-| Backend Auth | `backend/Controllers/AuthController.cs` | POST /auth/login, POST /auth/register |
-| Backend DB | `backend/Data/ApplicationDbContext.cs` | EF Core DbContext, OnModelCreating |
-| Token Service | `backend/Services/TokenService.cs` | JWT generation with 7-day expiry |
+| Frontend Root | `frontend/src/App.tsx` | QueryClientProvider, theme, auth initialization |
+| Frontend Routes | `frontend/src/app/router/index.tsx` | Route definitions with ProtectedRoute |
+| Frontend Auth | `frontend/src/features/auth/store.ts` | Zustand state (user, token, isAuthenticated, loading) |
+| Frontend API | `frontend/src/shared/api/client.ts` | Axios instance with request/response interceptors |
+| Frontend Styling | `frontend/src/index.css` | Tailwind v4 @theme tokens and CSS variables |
+| Backend Root | `backend/Program.cs` | DI setup, middleware, CORS, EF Core, auto-seeding |
+| Backend Auth | `backend/Controllers/AuthController.cs` | POST /auth/login, POST /auth/register endpoints |
+| Backend DB | `backend/Data/ApplicationDbContext.cs` | EF Core DbContext, entity relationships, migrations |
+| Token Service | `backend/Services/TokenService.cs` | JWT generation with 7-day expiry, user claims |
+| Courses API | `backend/Controllers/CoursesController.cs` | Course listing, creation, filtering, pagination |
+| Enrollments API | `backend/Controllers/EnrollmentsController.cs` | Student enrollment management |
+| Import/Export | `backend/Controllers/ImportExportController.cs` | PDF export, course import functionality |
 
 ## Database Initialization
 
@@ -177,36 +194,85 @@ On first backend startup, `Program.cs` runs `SeedDatabase()`:
 
 To reset database: Delete `mysql_data` Docker volume and restart container.
 
-## Common Development Tasks
+## Adding New Features
 
-### Fixing Port Issues (Windows)
+### Backend: Adding a New API Endpoint
 
-If port 5000 is occupied:
-```bash
-netstat -ano | findstr :5000
-taskkill /PID {id} /F
+1. **Create DTO** in `backend/DTOs/` (request/response types)
+2. **Create Validator** in `backend/Validators/` extending `AbstractValidator<YourDto>`
+3. **Create Model** in `backend/Models/` if it's a new entity (inherits relationships with EF)
+4. **Add DbSet** to `backend/Data/ApplicationDbContext.cs` if new entity
+5. **Add method to Controller** in `backend/Controllers/` with `[HttpPost/Get/Put/Delete]` attribute
+6. **Dependency Inject** any services needed (TokenService, etc.)
+7. **Call from Frontend** via `frontend/src/shared/api/{feature}Api.ts`
+
+### Frontend: Adding a Feature Module
+
+Following Feature-Sliced Design:
+1. Create `frontend/src/features/[feature]/` directory
+2. Add `store.ts` for Zustand state (if needed)
+3. Add `hooks.ts` for custom hooks wrapping API calls
+4. Export public API from `index.ts`
+5. Import and use in pages or components
+
+### Frontend: Adding a Page
+
+1. Create folder in `frontend/src/pages/[feature]/[page]/`
+2. Add `index.tsx` (routed component) and sub-components as needed
+3. Add route to `frontend/src/app/router/index.tsx`
+4. Wrap with `<ProtectedRoute>` if authentication required
+5. Use layouts from `widgets/` (MainLayout, AuthLayout, DashboardLayout)
+
+## Frontend Architecture Details
+
+### Tailwind CSS v4 (CSS-First Configuration)
+
+**CRITICAL:** Tailwind v4 uses CSS-first configuration. **ALL styling work happens in `src/index.css`** via `@theme` directive. The `tailwind.config.js` file is not used.
+
+```css
+/* src/index.css - Theme tokens defined here */
+@import "tailwindcss";
+
+@theme {
+  --color-primary-500: #ffab4c;
+  --color-primary-600: #f59a3f;
+  --color-accent-400: #fe4e80;
+  /* ... define all theme tokens */
+}
+
+:root {
+  --bg-primary: #ffffff;
+  --text-primary: #1a1a1a;
+}
 ```
 
-### Adding a New API Endpoint
+**Color Palette:**
+- **Primary:** Orange (#FFAB4C) — `bg-primary-*`, `text-primary-*`
+- **Accent:** Pink (#FE4E80) — `bg-accent-*`, `text-accent-*`
+- **Secondary:** Purple (#D987ED) — `bg-secondary-*`, `text-secondary-*`
+- **Neutral:** Grayscale — `bg-neutral-*`, `text-neutral-*`
 
-1. **Create DTO** in `backend/DTOs/`
-2. **Create Validator** in `backend/Validators/` (extends `AbstractValidator<T>`)
-3. **Add method to Controller** in `backend/Controllers/` with `[HttpPost/Get/Put/Delete]` attribute
-4. **Register validator in `Program.cs`:** `services.AddValidatorsFromAssemblyContaining<Program>()`
-5. **Call from frontend** via `shared/api/{feature}Api.ts`
+**Usage in Components:**
+```tsx
+// ✅ Use Tailwind utilities directly
+<div className="bg-primary-600 text-white">
 
-### Adding Frontend Component
+// ✅ Use CSS variables in inline styles when needed
+<div style={{color: 'var(--color-primary-600)'}}>
 
-1. Use `shared/ui/` components (Button, Input, Card) from shadcn
-2. Connect to Zustand store or TanStack Query hooks as needed
-3. Follow Tailwind utility-first approach for styling
-4. Type all props with TypeScript interfaces
+// Use cn() helper to merge classnames
+import { cn } from '@/shared/lib';
+className={cn('base-classes', condition && 'conditional-class')}
+```
 
-### Running a Single Test
+### State Management Strategy
 
-Currently no test projects exist. To add tests:
-- **Frontend:** Use Vitest + React Testing Library
-- **Backend:** Use xUnit or NUnit, place in `backend.Tests/` project
+- **Zustand:** Global client state (auth, user info, UI state)
+  - Location: `src/features/[feature]/store.ts`
+  - Example: `features/auth/store.ts` for authentication state
+- **TanStack Query:** Server state (courses, enrollments, lessons)
+  - Cache, background sync, refetch management
+  - Example patterns in API integration section
 
 ## Security Considerations
 
@@ -221,30 +287,59 @@ Currently no test projects exist. To add tests:
 
 | Issue | Solution |
 |-------|----------|
-| "Cannot find module '@'" | Check `vite.config.ts` alias and `tsconfig.app.json` paths |
-| TypeScript errors in IDE | Run `npx tsc --noEmit` to see all issues |
-| 401 Unauthorized errors | Clear localStorage, verify JWT secret matches backend |
-| MySQL connection fails | Check `docker ps`, verify credentials in `appsettings.json` |
-| CORS errors | Update allowed origins in `Program.cs` Program.UseCorsPolicies section |
-| Vite HMR not working | Check port 5173 is accessible, restart `npm run dev` |
+| Port 5000 occupied (Windows) | `netstat -ano \| findstr :5000` then `taskkill /PID {id} /F` |
+| Port 5173 occupied | Kill the process or use `npm run dev -- --port 5174` |
+| TypeScript errors in IDE | Run `npm run build` (includes `tsc -b`) to see all issues |
+| 401 Unauthorized errors | Clear localStorage, verify JWT secret in both `.env` and `appsettings.json` match |
+| MySQL connection fails | Verify `docker ps` shows container running, check credentials in `appsettings.json` |
+| CORS errors | Update allowed origins in `backend/Program.cs` (currently allows localhost:5173) |
+| Vite HMR not working | Restart dev server: `npm run dev` |
+| "Cannot find module '@'" | Verify `vite.config.ts` alias and `tsconfig.app.json` paths are correct |
+| Styling not applying (Tailwind) | Check `src/index.css` has `@import "tailwindcss"` and `@theme` block defined |
+
+## API Documentation
+
+Swagger docs available at `http://localhost:5000/swagger` when backend is running.
+
+**Key Endpoints:**
+- `POST /api/auth/login` - User login (returns JWT token)
+- `POST /api/auth/register` - User registration
+- `GET /api/users/profile` - Get current user profile
+- `GET /api/courses` - List courses (supports pagination)
+- `POST /api/courses` - Create course (teacher only)
+- `GET /api/enrollments` - Get student enrollments
+- `POST /api/enrollments` - Enroll in course
+- `POST /api/import-export/import-courses` - Import courses from CSV/Excel
+- `GET /api/import-export/export-pdf` - Export course as PDF
+
+**Test Credentials (after seeding):**
+- Student: `student1@school.com` / `temp123`
+- Teacher: `teacher@school.com` / `temp123`
+- Admin: `admin@school.com` / `temp123`
 
 ## Project Status
 
-**Version:** 0.1.0 (Early Development)
+**Version:** 0.2.0 (Active Development)
 
 **Completed:**
-- User registration & login
-- JWT authentication & protected routes
-- Course listing with pagination
-- Dashboard layout
-- UI component library
+- User authentication (login, registration, JWT)
+- Protected routes and role-based access
+- Course management (CRUD, listing with pagination)
+- Student enrollment system
+- Course import/export functionality
+- PDF course export
+- Dashboard layouts
+- Comprehensive UI component library
+- Zustand state management
+- TanStack Query integration (prepared)
 
 **In Development:**
-- Course catalog features
-- Student/teacher dashboards
+- Student/teacher dashboard features
+- Assignment submission system
+- Progress tracking
 
 **Planned:**
 - Admin panel
-- Analytics & reporting
-- Payment integration
-- Assignment grading
+- Advanced analytics & reporting
+- Assignment grading system
+- Real-time notifications

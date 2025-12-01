@@ -3,27 +3,79 @@ import { ProtectedRoute } from './ProtectedRoute';
 
 // Layouts
 import { AuthLayout } from '@/widgets/AuthLayout';
+import { LandingLayout } from '@/widgets/LandingLayout';
 import { MainLayout } from '@/widgets/MainLayout';
 import { DashboardLayout } from '@/widgets/DashboardLayout';
 
-// Pages
+// Pages - Auth
 import { LandingPage } from '@/pages/landing';
 import { LoginPage } from '@/pages/auth/login';
 import { RegisterPage } from '@/pages/auth/register';
-import { DashboardPage } from '@/pages/dashboard';
 
-// СОЗДАЙ ЭТИ КОМПОНЕНТЫ (или импортируй если уже есть):
-const MyCoursesPage = () => <div><h1>Мои курсы</h1></div>;
-const SettingsPage = () => <div><h1>Настройки</h1></div>;
+// Pages - Dashboard & Profile
+import { DashboardPage } from '@/pages/dashboard';
+import { SettingsPage } from '@/pages/settings';
+
+// Pages - Courses
+import { CourseCatalogPage } from '@/pages/courses/catalog';
+import { CourseDetailsPage } from '@/pages/courses/details';
+
+// Pages - Student Dashboard
+import { StudentDashboardPage } from '@/pages/student-dashboard';
+
+// Pages - Teacher Dashboard
+import { TeacherDashboardPage } from '@/pages/teacher-dashboard';
+
+// Pages - Admin Panel
+import { AdminPanelPage } from '@/pages/admin-panel';
+
+// Pages - Import/Export
+import { ImportExportPage } from '@/pages/import-export';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <LandingLayout />,
     children: [
       {
         index: true,
         element: <LandingPage />,
+      },
+    ],
+  },
+  {
+    path: '/courses',
+    element: <MainLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <ProtectedRoute requiredRoles={['Student']}>
+            <CourseCatalogPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ':id',
+        element: (
+          <ProtectedRoute requiredRoles={['Student']}>
+            <CourseDetailsPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: '/import-export',
+    element: <MainLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <ProtectedRoute>
+            <ImportExportPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
@@ -39,10 +91,21 @@ export const router = createBrowserRouter([
         index: true,
         element: <DashboardPage />,
       },
-      // ДОБАВЬ ЭТИ МАРШРУТЫ:
       {
         path: 'my-courses',
-        element: <MyCoursesPage />,
+        element: (
+          <ProtectedRoute requiredRoles={['Student']}>
+            <StudentDashboardPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'teacher',
+        element: <TeacherDashboardPage />,
+      },
+      {
+        path: 'admin',
+        element: <AdminPanelPage />,
       },
       {
         path: 'settings',

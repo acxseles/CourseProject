@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth, useLogout } from '@/features/auth'
 import { Button, ThemeSwitcher } from '@/shared/ui'
-import { BookOpen, LogOut, User, Menu, X } from 'lucide-react'
+import { BookOpen, LogOut, User, Menu, X, BookCopy, Download } from 'lucide-react'
 import { useState } from 'react'
 
 export const Header = () => {
@@ -29,6 +29,12 @@ export const Header = () => {
                         <ThemeSwitcher />
                         {isAuthenticated ? (
                             <>
+                                <Link to="/courses">
+                                    <Button variant="ghost" className="text-foreground font-bold hover:text-primary-600">
+                                        Курсы
+                                    </Button>
+                                </Link>
+
                                 <Link to="/dashboard">
                                     <Button variant="ghost" className="text-foreground font-bold hover:text-primary-600">
                                         Кабинет
@@ -111,6 +117,17 @@ export const Header = () => {
                                 </div>
 
                                 <Link
+                                    to="/courses"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="block"
+                                >
+                                    <Button variant="ghost" className="w-full text-foreground font-bold justify-start hover:bg-primary-50 gap-2">
+                                        <BookCopy className="w-4 h-4" />
+                                        Курсы
+                                    </Button>
+                                </Link>
+
+                                <Link
                                     to="/dashboard"
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="block"
@@ -119,6 +136,19 @@ export const Header = () => {
                                         Кабинет
                                     </Button>
                                 </Link>
+
+                                {user?.role === 'Admin' && (
+                                    <Link
+                                        to="/import-export"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="block"
+                                    >
+                                        <Button variant="ghost" className="w-full text-foreground font-bold justify-start hover:bg-primary-50 gap-2">
+                                            <Download className="w-4 h-4" />
+                                            Импорт/Экспорт
+                                        </Button>
+                                    </Link>
+                                )}
 
                                 <Button
                                     variant="destructive"
