@@ -7,6 +7,10 @@ import type {
 } from '@/shared/types';
 
 export const testsApi = {
+  // Получить все тесты для курса
+  getTestsForCourse: (courseId: number) =>
+    client.get<TestDto[]>(`/tests/course/${courseId}`),
+
   // Получить тест для урока
   getTestForLesson: (lessonId: number) =>
     client.get<TestDto>(`/tests/lesson/${lessonId}`),

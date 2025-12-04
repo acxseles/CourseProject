@@ -74,3 +74,4 @@ export * from './auth.types';
 export * from './calendar.types';
 export * from './tests.types';
 export * from './courses.types';
+export * from './lessons.types';

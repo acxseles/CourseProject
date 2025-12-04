@@ -1,17 +1,20 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useGetCourseById } from '@/features/courses';
 import { useEnrollStudent } from '@/features/enrollments';
 import { useGetStudentEnrollments } from '@/features/enrollments';
 import { useAuth } from '@/features/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/shared/ui';
-import { BookOpen, Clock, DollarSign, User, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { BookOpen, Clock, DollarSign, User, AlertCircle, Loader, CheckCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { CourseTestsSection } from '@/components/CourseTestsSection';
+import { format } from 'date-fns';
 
 export const CourseDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [enrolled, setEnrolled] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
   const courseId = id ? parseInt(id) : 0;
   const { data: course, isLoading, error } = useGetCourseById(courseId);
@@ -23,11 +26,20 @@ export const CourseDetailsPage = () => {
     return enrollmentsData?.items?.some(e => e.courseId === courseId) || false;
   }, [enrollmentsData, courseId]);
 
+  // Check if course is advanced
+  const isAdvancedCourse = course?.level === 'Advanced';
+
   const handleEnroll = async () => {
     if (!user) {
       navigate('/auth/login');
       return;
     }
+
+    // For advanced courses, date is required
+    if (isAdvancedCourse && !selectedDate) {
+      return;
+    }
+
     try {
       await enrollMutation.mutateAsync({ courseId, studentId: user.id });
       setEnrolled(true);
@@ -142,7 +154,7 @@ export const CourseDetailsPage = () => {
             </Card>
 
             {/* Description */}
-            <Card>
+            <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Описание курса</CardTitle>
               </CardHeader>
@@ -152,28 +164,49 @@ export const CourseDetailsPage = () => {
                 </p>
               </CardContent>
             </Card>
+
+            {/* Tests Section - visible only if enrolled */}
+            {(enrolled || isAlreadyEnrolled) && (
+              <CourseTestsSection courseId={courseId} />
+            )}
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {enrolled || isAlreadyEnrolled ? (
-              <Card className="sticky top-4 bg-green-50 border-green-200">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-center mb-4">
-                    <CheckCircle className="w-12 h-12 text-green-600" />
-                  </div>
-                  <h3 className="text-center font-semibold text-lg mb-2">Вы записаны на курс!</h3>
-                  <p className="text-center text-sm text-foreground/70 mb-4">
-                    Перейдите в раздел "Мои курсы" чтобы начать обучение.
-                  </p>
-                  <Button
-                    onClick={() => navigate('/dashboard/my-courses')}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    Перейти к курсу
-                  </Button>
-                </CardContent>
-              </Card>
+              <>
+                <Card className="sticky top-4 bg-green-50 border-green-200 mb-4">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-center mb-4">
+                      <CheckCircle className="w-12 h-12 text-green-600" />
+                    </div>
+                    <h3 className="text-center font-semibold text-lg mb-2">Вы записаны на курс!</h3>
+                    <p className="text-center text-sm text-foreground/70 mb-4">
+                      Перейдите в раздел "Мои курсы" чтобы начать обучение.
+                    </p>
+                    <Button
+                      onClick={() => navigate('/dashboard/my-courses')}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      Посмотреть мои курсы
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Link to={`/courses/${id}/lessons`}>
+                  <Card className="sticky top-4 cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="w-5 h-5" />
+                        Лекции
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Button className="w-full">Смотреть лекции →</Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </>
             ) : (
               <Card className="sticky top-4">
                 <CardHeader>
@@ -181,9 +214,37 @@ export const CourseDetailsPage = () => {
                   <CardDescription>Стоимость курса</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {isAdvancedCourse && (
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold">
+                        Выберите дату начала курса *
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-primary-600" />
+                        <input
+                          type="date"
+                          value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              setSelectedDate(new Date(e.target.value));
+                            } else {
+                              setSelectedDate(undefined);
+                            }
+                          }}
+                          min={format(new Date(), 'yyyy-MM-dd')}
+                          className="flex-1 px-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          style={{ borderColor: 'var(--color-border)' }}
+                        />
+                      </div>
+                      {!selectedDate && (
+                        <p className="text-xs text-red-600">Дата начала обязательна для продвинутых курсов</p>
+                      )}
+                    </div>
+                  )}
+
                   <Button
                     onClick={handleEnroll}
-                    disabled={enrollMutation.isPending}
+                    disabled={enrollMutation.isPending || (isAdvancedCourse && !selectedDate)}
                     className="w-full bg-primary-600 hover:bg-primary-700"
                   >
                     {enrollMutation.isPending ? 'Запись...' : 'Записаться на курс'}

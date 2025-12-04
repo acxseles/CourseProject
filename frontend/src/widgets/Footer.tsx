@@ -1,14 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Badge } from '@/components/ui'
-import {
-    BookOpen,
-    Mail,
-    MapPin,
-    Github,
-    Linkedin,
-    Twitter,
-    ArrowRight,
-} from 'lucide-react'
+import { BookOpen, Github, Linkedin, Twitter, ArrowRight } from 'lucide-react'
 
 export const Footer = () => {
     const currentYear = new Date().getFullYear()
@@ -137,25 +128,6 @@ export const Footer = () => {
                         </div>
                     ))}
                 </div>
-
-                {/* CTA Section */}
-                {/* <div className="grid md:grid-cols-2 gap-6 mb-12 p-6 rounded-xl shadow-lg" style={{backgroundImage: 'linear-gradient(to right, var(--color-primary-50), var(--color-accent-50), var(--color-secondary-50))', borderColor: 'var(--color-primary-200)', borderWidth: '2px'}}>
-          <div>
-            <h3 className="font-semibold text-foreground mb-2">Начните учиться бесплатно</h3>
-            <p className="text-sm text-foreground/70">
-              Получите доступ к первому уроку без регистрации. Никаких кредитных карт не требуется.
-            </p>
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            <Link
-              to="/auth/register"
-              className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-primary-600 to-accent-500 text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm gap-2 group"
-            >
-              Начать сейчас
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-        </div> */}
 
                 {/* Contact Info */}
                 <div className="grid md:grid-cols-3 gap-6 mb-12 pb-12 border-b border-border"></div>

@@ -19,6 +19,8 @@ import { DashboardPage } from '@/pages/dashboard';
 // Pages - Courses
 import { CourseCatalogPage } from '@/pages/courses/catalog';
 import { CourseDetailsPage } from '@/pages/courses/details';
+import LessonsPage from '@/pages/courses/lessons';
+import LessonDetailPage from '@/pages/courses/lessons/detail';
 
 // Pages - Student Dashboard
 import { StudentDashboardPage } from '@/pages/student-dashboard';
@@ -60,6 +62,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute requiredRoles={['Student']}>
             <CourseDetailsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ':courseId/lessons',
+        element: (
+          <ProtectedRoute requiredRoles={['Student']}>
+            <LessonsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ':courseId/lessons/:lessonId',
+        element: (
+          <ProtectedRoute requiredRoles={['Student']}>
+            <LessonDetailPage />
           </ProtectedRoute>
         ),
       },

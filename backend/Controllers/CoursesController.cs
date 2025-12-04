@@ -230,6 +230,7 @@ namespace SchoolSwedishAPI.Controllers
 
         // Получить конкретный урок
         [HttpGet("{courseId}/lessons/{lessonId}")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<ActionResult<LessonDto>> GetLesson(int courseId, int lessonId)
         {
             try
@@ -266,6 +267,7 @@ namespace SchoolSwedishAPI.Controllers
         }
         // Получить все уроки курса
         [HttpGet("{courseId}/lessons")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<ActionResult<List<LessonDto>>> GetCourseLessons(int courseId)
         {
             try
@@ -305,11 +307,25 @@ namespace SchoolSwedishAPI.Controllers
             {
                 _logger.LogInformation("➕ Создание урока для курса ID: {CourseId}", courseId);
 
-                var course = await _context.Courses.FindAsync(courseId);
+                var course = await _context.Courses
+                    .Include(c => c.Teacher)
+                    .FirstOrDefaultAsync(c => c.Id == courseId);
                 if (course == null)
                 {
                     _logger.LogWarning("❌ Курс не найден ID: {CourseId}", courseId);
                     return NotFound(new { message = "Курс не найден" });
+                }
+
+                // Проверка прав доступа: только учитель может добавлять уроки к своим курсам
+                var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var currentUserId = int.Parse(userIdString);
+                var currentUserRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                if (currentUserRole == "Teacher" && course.TeacherId != currentUserId)
+                {
+                    _logger.LogWarning("❌ Учитель {UserId} не имеет прав для добавления уроков к курсу {CourseId}",
+                        currentUserId, courseId);
+                    return Forbid();
                 }
 
                 var lesson = new Lesson
@@ -342,6 +358,106 @@ namespace SchoolSwedishAPI.Controllers
             {
                 _logger.LogError(ex, "💥 Ошибка при создании урока для курса ID: {CourseId}", courseId);
                 return StatusCode(500, new { message = "Ошибка при создании урока" });
+            }
+        }
+
+        // Обновить урок
+        [HttpPut("{courseId}/lessons/{lessonId}")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<ActionResult<LessonDto>> UpdateLesson(int courseId, int lessonId, CreateLessonDto updateLessonDto)
+        {
+            try
+            {
+                _logger.LogInformation("✏️ Обновление урока ID: {LessonId} курса ID: {CourseId}", lessonId, courseId);
+
+                var lesson = await _context.Lessons
+                    .FirstOrDefaultAsync(l => l.Id == lessonId && l.CourseId == courseId);
+
+                if (lesson == null)
+                {
+                    _logger.LogWarning("❌ Урок не найден ID: {LessonId}", lessonId);
+                    return NotFound(new { message = "Урок не найден" });
+                }
+
+                // Проверка прав доступа: только учитель может обновлять уроки своих курсов
+                var course = await _context.Courses.FindAsync(courseId);
+                var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var currentUserId = int.Parse(userIdString);
+                var currentUserRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                if (currentUserRole == "Teacher" && course?.TeacherId != currentUserId)
+                {
+                    _logger.LogWarning("❌ Учитель {UserId} не имеет прав для обновления уроков", currentUserId);
+                    return Forbid();
+                }
+
+                lesson.Title = updateLessonDto.Title;
+                lesson.Content = updateLessonDto.Content;
+                lesson.OrderIndex = updateLessonDto.OrderIndex;
+
+                _context.Lessons.Update(lesson);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("✅ Урок обновлен: {Title} (ID: {LessonId})", lesson.Title, lesson.Id);
+
+                return Ok(new LessonDto
+                {
+                    Id = lesson.Id,
+                    CourseId = lesson.CourseId,
+                    Title = lesson.Title,
+                    Content = lesson.Content,
+                    OrderIndex = lesson.OrderIndex,
+                    CreatedAt = lesson.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при обновлении урока ID: {LessonId}", lessonId);
+                return StatusCode(500, new { message = "Ошибка при обновлении урока" });
+            }
+        }
+
+        // Удалить урок
+        [HttpDelete("{courseId}/lessons/{lessonId}")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> DeleteLesson(int courseId, int lessonId)
+        {
+            try
+            {
+                _logger.LogInformation("🗑️ Удаление урока ID: {LessonId} курса ID: {CourseId}", lessonId, courseId);
+
+                var lesson = await _context.Lessons
+                    .FirstOrDefaultAsync(l => l.Id == lessonId && l.CourseId == courseId);
+
+                if (lesson == null)
+                {
+                    _logger.LogWarning("❌ Урок не найден ID: {LessonId}", lessonId);
+                    return NotFound(new { message = "Урок не найден" });
+                }
+
+                // Проверка прав доступа: только учитель может удалять уроки своих курсов
+                var course = await _context.Courses.FindAsync(courseId);
+                var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var currentUserId = int.Parse(userIdString);
+                var currentUserRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                if (currentUserRole == "Teacher" && course?.TeacherId != currentUserId)
+                {
+                    _logger.LogWarning("❌ Учитель {UserId} не имеет прав для удаления уроков", currentUserId);
+                    return Forbid();
+                }
+
+                _context.Lessons.Remove(lesson);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("✅ Урок удален: ID: {LessonId}", lesson.Id);
+
+                return Ok(new { message = "Урок успешно удален" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при удалении урока ID: {LessonId}", lessonId);
+                return StatusCode(500, new { message = "Ошибка при удалении урока" });
             }
         }
     }

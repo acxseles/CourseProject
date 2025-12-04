@@ -17,10 +17,10 @@ export const Alert = ({ type = 'info', children, className }: AlertProps) => {
   };
 
   const icons = {
-    success: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 flex-shrink-0" />,
-    error: <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 flex-shrink-0" />,
-    warning: <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500 flex-shrink-0" />,
-    info: <Info className="w-5 h-5 sm:w-6 sm:h-6 text-primary-400 flex-shrink-0" />,
+    success: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 shrink-0" />,
+    error: <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 shrink-0" />,
+    warning: <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500 shrink-0" />,
+    info: <Info className="w-5 h-5 sm:w-6 sm:h-6 text-primary-400 shrink-0" />,
   };
 
   return (
@@ -31,7 +31,7 @@ export const Alert = ({ type = 'info', children, className }: AlertProps) => {
         className
       )}
     >
-      <div className="flex-shrink-0 mt-0.5">{icons[type]}</div>
+      <div className="shrink-0 mt-0.5">{icons[type]}</div>
       <div className="flex-1 text-xs sm:text-sm font-medium">{children}</div>
     </div>
   );

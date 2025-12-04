@@ -22,6 +22,57 @@ namespace SchoolSwedishAPI.Controllers
             _logger = logger;
         }
 
+        // Получить все тесты для курса
+        [HttpGet("course/{courseId}")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
+        public async Task<ActionResult<List<TestDto>>> GetTestsForCourse(int courseId)
+        {
+            try
+            {
+                _logger.LogInformation("📋 Запрос тестов для курса {CourseId}", courseId);
+
+                var assignments = await _context.Assignments
+                    .Include(a => a.Lesson)
+                    .Include(a => a.Questions)
+                        .ThenInclude(q => q.Answers)
+                    .Where(a => a.Lesson.CourseId == courseId)
+                    .OrderBy(a => a.Lesson.OrderIndex)
+                    .ToListAsync();
+
+                var result = assignments.Select(a => new TestDto
+                {
+                    Id = a.Id,
+                    LessonId = a.LessonId,
+                    Title = a.Title,
+                    Description = a.Description,
+                    MaxScore = a.MaxScore ?? 100,
+                    Questions = a.Questions
+                        .OrderBy(q => q.Id)
+                        .Select(q => new QuestionDto
+                        {
+                            Id = q.Id,
+                            Text = q.Text,
+                            QuestionType = q.QuestionType,
+                            Answers = q.Answers
+                                .OrderBy(a => a.OrderIndex ?? 0)
+                                .Select(a => new AnswerDto
+                                {
+                                    Id = a.Id,
+                                    Text = a.Text
+                                }).ToList()
+                        }).ToList()
+                }).ToList();
+
+                _logger.LogInformation("✅ Найдено {Count} тестов для курса {CourseId}", result.Count, courseId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при получении тестов для курса {CourseId}", courseId);
+                return StatusCode(500, new { message = "Ошибка при получении тестов" });
+            }
+        }
+
         // Получить тест для урока (для студентов)
         [HttpGet("lesson/{lessonId}")]
         [Authorize(Roles = "Student")]

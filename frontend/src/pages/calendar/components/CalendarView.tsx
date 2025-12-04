@@ -11,7 +11,7 @@ export const CalendarView = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
 
-  const { data, isLoading, error } = useMonthSessions(year, month);
+  const { isLoading, error } = useMonthSessions(year, month);
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));

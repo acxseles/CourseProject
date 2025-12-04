@@ -110,9 +110,11 @@ export const StudentDashboardPage = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button className="flex-1 bg-primary-600 hover:bg-primary-700">
-                      Продолжить обучение
-                    </Button>
+                    <Link to={`/courses/${enrollment.courseId}/lessons`} className="flex-1">
+                      <Button className="w-full bg-primary-600 hover:bg-primary-700">
+                        Продолжить обучение
+                      </Button>
+                    </Link>
                     <button
                       onClick={() => handleCancel(enrollment.id)}
                       disabled={cancelMutation.isPending}
