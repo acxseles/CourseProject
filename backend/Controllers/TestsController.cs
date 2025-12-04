@@ -177,14 +177,15 @@ namespace SchoolSwedishAPI.Controllers
                 }
 
                 // Проверяем не существует ли уже тест
-                var existingTest = await _context.Assignments
-                    .FirstOrDefaultAsync(a => a.LessonId == lessonId);
+                var existingTest = await _context.Questions
+                    .AnyAsync(q => q.Assignment.LessonId == lessonId);
 
-                if (existingTest != null)
+                if (existingTest)
                 {
                     _logger.LogWarning("❌ Тест уже существует для урока {LessonId}", lessonId);
                     return BadRequest(new { message = "Тест уже существует для этого урока" });
                 }
+
 
                 // Создаем задание (тест)
                 var assignment = new Assignment
