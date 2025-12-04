@@ -230,12 +230,48 @@ using (var scope = app.Services.CreateScope())
                 MaxScore = 100,
                 CreatedAt = DateTime.UtcNow
             },
+            // Test for third lesson of first course
+            new SchoolSwedishAPI.Models.Assignment
+            {
+                LessonId = lessons[2].Id,
+                Title = "Тест: Грамматика - личные местоимения",
+                Description = "Проверьте свои знания личных местоимений в шведском языке",
+                MaxScore = 100,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Test for fourth lesson of first course
+            new SchoolSwedishAPI.Models.Assignment
+            {
+                LessonId = lessons[3].Id,
+                Title = "Тест: Числа и счёт",
+                Description = "Проверьте свои знания чисел и счёта на шведском",
+                MaxScore = 100,
+                CreatedAt = DateTime.UtcNow
+            },
             // Test for first lesson of second course
             new SchoolSwedishAPI.Models.Assignment
             {
                 LessonId = lessons[4].Id,
                 Title = "Тест: Продвинутые разговорные конструкции",
                 Description = "Проверьте свои навыки продвинутого разговорного шведского",
+                MaxScore = 100,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Test for second lesson of second course
+            new SchoolSwedishAPI.Models.Assignment
+            {
+                LessonId = lessons[5].Id,
+                Title = "Тест: Деловое общение",
+                Description = "Проверьте свои навыки делового общения на шведском",
+                MaxScore = 100,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Test for third lesson of second course
+            new SchoolSwedishAPI.Models.Assignment
+            {
+                LessonId = lessons[6].Id,
+                Title = "Тест: Слушание и понимание",
+                Description = "Проверьте свои навыки аудирования и понимания шведского",
                 MaxScore = 100,
                 CreatedAt = DateTime.UtcNow
             },
@@ -261,6 +297,24 @@ using (var scope = app.Services.CreateScope())
                 LessonId = lessons[9].Id,
                 Title = "Тест: Современный шведский язык и медиа",
                 Description = "Проверьте способность понимать современный шведский язык в медиа",
+                MaxScore = 100,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Test for fourth lesson of third course
+            new SchoolSwedishAPI.Models.Assignment
+            {
+                LessonId = lessons[10].Id,
+                Title = "Тест: Академический шведский и исследования",
+                Description = "Проверьте свои знания академического шведского языка",
+                MaxScore = 100,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Test for fifth lesson of third course
+            new SchoolSwedishAPI.Models.Assignment
+            {
+                LessonId = lessons[11].Id,
+                Title = "Тест: Региональные диалекты и варианты",
+                Description = "Проверьте свои знания региональных диалектов шведского языка",
                 MaxScore = 100,
                 CreatedAt = DateTime.UtcNow
             }
@@ -372,27 +426,27 @@ using (var scope = app.Services.CreateScope())
         context.Answers.AddRange(answers3);
         context.SaveChanges();
 
-        // Add questions and answers for fourth assignment (Advanced course)
+        // Add questions and answers for fourth assignment (first course, lesson 3 - Grammar)
         var questions4 = new List<SchoolSwedishAPI.Models.Question>
         {
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[3].Id,
-                Text = "Какое главное произведение написал Август Стриндберг?",
+                Text = "Как переводится личное местоимение 'я' на шведский?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             },
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[3].Id,
-                Text = "Кто автор 'Чудесного путешествия Нильса Хольгерссона'?",
+                Text = "Как переводится личное местоимение 'они' на шведский?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             },
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[3].Id,
-                Text = "В каком веке жила Сельма Лагерлёф?",
+                Text = "Как переводится личное местоимение 'вы' (вежливая форма) на шведский?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             }
@@ -403,46 +457,46 @@ using (var scope = app.Services.CreateScope())
 
         var answers4 = new List<SchoolSwedishAPI.Models.Answer>
         {
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Госпожа Юлия", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Красная комната", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Отец", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Привидения", IsCorrect = false, OrderIndex = 4 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Jag", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Du", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Han", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[0].Id, Text = "Vi", IsCorrect = false, OrderIndex = 4 },
 
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Сельма Лагерлёф", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Август Стриндберг", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Эмиль Беккер", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Виктор Рюдберг", IsCorrect = false, OrderIndex = 4 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "De", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Vi", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Ni", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[1].Id, Text = "Hon", IsCorrect = false, OrderIndex = 4 },
 
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "XIX-XX веках", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "XVIII веке", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "XX веке", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "XVII веке", IsCorrect = false, OrderIndex = 4 }
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "Ni", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "Du", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "De", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions4[2].Id, Text = "Er", IsCorrect = false, OrderIndex = 4 }
         };
 
         context.Answers.AddRange(answers4);
         context.SaveChanges();
 
-        // Add questions and answers for fifth assignment (Advanced course)
+        // Add questions and answers for fifth assignment (first course, lesson 4 - Numbers)
         var questions5 = new List<SchoolSwedishAPI.Models.Question>
         {
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[4].Id,
-                Text = "Какой национальный день отмечают в Швеции 6 июня?",
+                Text = "Как звучит число '5' на шведском?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             },
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[4].Id,
-                Text = "Как называется традиционный шведский стол с холодными закусками?",
+                Text = "Как звучит число '10' на шведском?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             },
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[4].Id,
-                Text = "Как называется шведское летнее торжество в честь летнего солнцестояния?",
+                Text = "Как звучит число '100' на шведском?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             }
@@ -453,46 +507,46 @@ using (var scope = app.Services.CreateScope())
 
         var answers5 = new List<SchoolSwedishAPI.Models.Answer>
         {
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "День Швеции и День флага", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "День независимости", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "День конституции", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "День королевства", IsCorrect = false, OrderIndex = 4 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "Fem", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "Fyra", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "Sex", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[0].Id, Text = "Tre", IsCorrect = false, OrderIndex = 4 },
 
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Смёргосборд", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Юлебордд", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Фика", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Мидсоммарборд", IsCorrect = false, OrderIndex = 4 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Tio", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Tjugo", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Tolv", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[1].Id, Text = "Nio", IsCorrect = false, OrderIndex = 4 },
 
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Мидсоммар", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Юль", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Валбург", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Апелсинскива", IsCorrect = false, OrderIndex = 4 }
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Hundra", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Tusen", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Tio", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions5[2].Id, Text = "Tjugo", IsCorrect = false, OrderIndex = 4 }
         };
 
         context.Answers.AddRange(answers5);
         context.SaveChanges();
 
-        // Add questions and answers for sixth assignment (Advanced course)
+        // Add questions and answers for sixth assignment (second course, lesson 2 - Business communication)
         var questions6 = new List<SchoolSwedishAPI.Models.Question>
         {
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[5].Id,
-                Text = "Какое ведущее шведское новостное агентство?",
+                Text = "Как правильно начать деловое письмо на шведском?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             },
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[5].Id,
-                Text = "Как называется национальная телекомпания Швеции?",
+                Text = "Как вежливо закончить деловое письмо на шведском?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             },
             new SchoolSwedishAPI.Models.Question
             {
                 AssignmentId = assignments[5].Id,
-                Text = "Какой популярный шведский журнал известен своей критикой и культурными обзорами?",
+                Text = "Как правильно назвать себя в деловом телефонном разговоре?",
                 QuestionType = "MultipleChoice",
                 CreatedAt = DateTime.UtcNow
             }
@@ -503,26 +557,326 @@ using (var scope = app.Services.CreateScope())
 
         var answers6 = new List<SchoolSwedishAPI.Models.Answer>
         {
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "ТТ", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "АФП", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "РейтерS", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "ДНБ", IsCorrect = false, OrderIndex = 4 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "Hej [namn],", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "Hallå!", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "Tjena!", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[0].Id, Text = "Vad är det?", IsCorrect = false, OrderIndex = 4 },
 
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "СВТ", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "НТВ", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "БВ", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "ТВ4", IsCorrect = false, OrderIndex = 4 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "Med vänlig hälsning,", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "Ha det bra!", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "Ses senare!", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[1].Id, Text = "Tack för nu!", IsCorrect = false, OrderIndex = 4 },
 
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Dagens Nyheter", IsCorrect = true, OrderIndex = 1 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Svenska Dagbladet", IsCorrect = false, OrderIndex = 2 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Expressen", IsCorrect = false, OrderIndex = 3 },
-            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Aftonbladet", IsCorrect = false, OrderIndex = 4 }
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Det här är [namn] från [företag]", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Hej, jag är [namn]", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Jag heter [namn]", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions6[2].Id, Text = "Vem är jag?", IsCorrect = false, OrderIndex = 4 }
         };
 
         context.Answers.AddRange(answers6);
         context.SaveChanges();
 
-        Log.Information("Database seeded with 4 users, 3 courses, enrollments, lessons, and comprehensive tests");
+        // Add questions and answers for seventh assignment (second course, lesson 3 - Listening)
+        var questions7 = new List<SchoolSwedishAPI.Models.Question>
+        {
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[6].Id,
+                Text = "Какой является самый эффективный способ улучшить навыки аудирования?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[6].Id,
+                Text = "Как назвать процесс прослушивания и повторения фраз за носителем языка?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[6].Id,
+                Text = "Какой тип материала лучше всего подходит для развития аудирования новичкам?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Questions.AddRange(questions7);
+        context.SaveChanges();
+
+        var answers7 = new List<SchoolSwedishAPI.Models.Answer>
+        {
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[0].Id, Text = "Слушание аутентичных материалов", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[0].Id, Text = "Чтение учебников", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[0].Id, Text = "Письменные упражнения", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[0].Id, Text = "Только грамматика", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[1].Id, Text = "Efterapning", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[1].Id, Text = "Transliteration", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[1].Id, Text = "Diktering", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[1].Id, Text = "Synkronisering", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[2].Id, Text = "Простые видео и подкасты для начинающих", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[2].Id, Text = "Новости на шведском", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[2].Id, Text = "Только музыка", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions7[2].Id, Text = "Технические видео", IsCorrect = false, OrderIndex = 4 }
+        };
+
+        context.Answers.AddRange(answers7);
+        context.SaveChanges();
+
+        // Add questions and answers for eighth assignment (Advanced course, lesson 1 - Literature)
+        var questions8 = new List<SchoolSwedishAPI.Models.Question>
+        {
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[7].Id,
+                Text = "Какое главное произведение написал Август Стриндберг?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[7].Id,
+                Text = "Кто автор 'Чудесного путешествия Нильса Хольгерссона'?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[7].Id,
+                Text = "В каком веке жила Сельма Лагерлёф?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Questions.AddRange(questions8);
+        context.SaveChanges();
+
+        var answers8 = new List<SchoolSwedishAPI.Models.Answer>
+        {
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[0].Id, Text = "Госпожа Юлия", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[0].Id, Text = "Красная комната", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[0].Id, Text = "Отец", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[0].Id, Text = "Привидения", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[1].Id, Text = "Сельма Лагерлёф", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[1].Id, Text = "Август Стриндберг", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[1].Id, Text = "Эмиль Беккер", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[1].Id, Text = "Виктор Рюдберг", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[2].Id, Text = "XIX-XX веках", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[2].Id, Text = "XVIII веке", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[2].Id, Text = "XX веке", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions8[2].Id, Text = "XVII веке", IsCorrect = false, OrderIndex = 4 }
+        };
+
+        context.Answers.AddRange(answers8);
+        context.SaveChanges();
+
+        // Add questions and answers for ninth assignment (Advanced course, lesson 2 - Culture)
+        var questions9 = new List<SchoolSwedishAPI.Models.Question>
+        {
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[8].Id,
+                Text = "Какой национальный день отмечают в Швеции 6 июня?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[8].Id,
+                Text = "Как называется традиционный шведский стол с холодными закусками?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[8].Id,
+                Text = "Как называется шведское летнее торжество в честь летнего солнцестояния?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Questions.AddRange(questions9);
+        context.SaveChanges();
+
+        var answers9 = new List<SchoolSwedishAPI.Models.Answer>
+        {
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[0].Id, Text = "День Швеции и День флага", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[0].Id, Text = "День независимости", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[0].Id, Text = "День конституции", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[0].Id, Text = "День королевства", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[1].Id, Text = "Смёргосборд", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[1].Id, Text = "Юлебордд", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[1].Id, Text = "Фика", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[1].Id, Text = "Мидсоммарборд", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[2].Id, Text = "Мидсоммар", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[2].Id, Text = "Юль", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[2].Id, Text = "Валбург", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions9[2].Id, Text = "Апелсинскива", IsCorrect = false, OrderIndex = 4 }
+        };
+
+        context.Answers.AddRange(answers9);
+        context.SaveChanges();
+
+        // Add questions and answers for tenth assignment (Advanced course, lesson 3 - Media)
+        var questions10 = new List<SchoolSwedishAPI.Models.Question>
+        {
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[9].Id,
+                Text = "Какое ведущее шведское новостное агентство?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[9].Id,
+                Text = "Как называется национальная телекомпания Швеции?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[9].Id,
+                Text = "Какой популярный шведский журнал известен своей критикой и культурными обзорами?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Questions.AddRange(questions10);
+        context.SaveChanges();
+
+        var answers10 = new List<SchoolSwedishAPI.Models.Answer>
+        {
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[0].Id, Text = "ТТ", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[0].Id, Text = "АФП", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[0].Id, Text = "РейтерS", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[0].Id, Text = "ДНБ", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[1].Id, Text = "СВТ", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[1].Id, Text = "НТВ", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[1].Id, Text = "БВ", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[1].Id, Text = "ТВ4", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[2].Id, Text = "Dagens Nyheter", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[2].Id, Text = "Svenska Dagbladet", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[2].Id, Text = "Expressen", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions10[2].Id, Text = "Aftonbladet", IsCorrect = false, OrderIndex = 4 }
+        };
+
+        context.Answers.AddRange(answers10);
+        context.SaveChanges();
+
+        // Add questions and answers for eleventh assignment (Advanced course, lesson 4 - Academic Swedish)
+        var questions11 = new List<SchoolSwedishAPI.Models.Question>
+        {
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[10].Id,
+                Text = "Какова типичная структура академического эссе на шведском языке?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[10].Id,
+                Text = "Как правильно оформить цитату в академическом тексте на шведском?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[10].Id,
+                Text = "Какой стиль документирования используется в шведских университетах?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Questions.AddRange(questions11);
+        context.SaveChanges();
+
+        var answers11 = new List<SchoolSwedishAPI.Models.Answer>
+        {
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[0].Id, Text = "Введение, основная часть, заключение", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[0].Id, Text = "Только основная часть", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[0].Id, Text = "Только заключение", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[0].Id, Text = "Без структуры", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[1].Id, Text = "Цитата + указание источника в скобках", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[1].Id, Text = "Цитата без источника", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[1].Id, Text = "Только пересказ", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[1].Id, Text = "Сноска внизу страницы", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[2].Id, Text = "Гарвардский стиль (Harvard)", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[2].Id, Text = "APA", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[2].Id, Text = "MLA", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions11[2].Id, Text = "Chicago", IsCorrect = false, OrderIndex = 4 }
+        };
+
+        context.Answers.AddRange(answers11);
+        context.SaveChanges();
+
+        // Add questions and answers for twelfth assignment (Advanced course, lesson 5 - Dialects)
+        var questions12 = new List<SchoolSwedishAPI.Models.Question>
+        {
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[11].Id,
+                Text = "Какой региональный диалект шведского называется 'далекарский'?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[11].Id,
+                Text = "Откуда происходит название шведского диалекта 'норрботненский'?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            },
+            new SchoolSwedishAPI.Models.Question
+            {
+                AssignmentId = assignments[11].Id,
+                Text = "Какой из следующих диалектов является самым отличительным от стандартного шведского?",
+                QuestionType = "MultipleChoice",
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        context.Questions.AddRange(questions12);
+        context.SaveChanges();
+
+        var answers12 = new List<SchoolSwedishAPI.Models.Answer>
+        {
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[0].Id, Text = "Далекарлия (провинция Даларна)", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[0].Id, Text = "Стокгольм", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[0].Id, Text = "Гётланд", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[0].Id, Text = "Сконе", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[1].Id, Text = "От провинции Норрботтен на севере", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[1].Id, Text = "От города Норрчепинг", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[1].Id, Text = "От реки Норр", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[1].Id, Text = "От королевской фамилии", IsCorrect = false, OrderIndex = 4 },
+
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[2].Id, Text = "Фельский диалект", IsCorrect = true, OrderIndex = 1 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[2].Id, Text = "Стокгольмский", IsCorrect = false, OrderIndex = 2 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[2].Id, Text = "Упландский", IsCorrect = false, OrderIndex = 3 },
+            new SchoolSwedishAPI.Models.Answer { QuestionId = questions12[2].Id, Text = "Вестергётский", IsCorrect = false, OrderIndex = 4 }
+        };
+
+        context.Answers.AddRange(answers12);
+        context.SaveChanges();
+
+        Log.Information("Database seeded with 4 users, 3 courses, enrollments, lessons, and comprehensive tests (11 test assignments)");
     }
     else
     {

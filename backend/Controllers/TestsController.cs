@@ -75,7 +75,7 @@ namespace SchoolSwedishAPI.Controllers
 
         // Получить тест для урока (для студентов)
         [HttpGet("lesson/{lessonId}")]
-        [Authorize(Roles = "Student")]
+        [Authorize(Roles = "Student,Teacher,Admin")]
         public async Task<ActionResult<TestDto>> GetTestForLesson(int lessonId)
         {
             try
@@ -106,18 +106,22 @@ namespace SchoolSwedishAPI.Controllers
                 //    return BadRequest(new { message = "Срок сдачи теста истек" });
                 //}
 
-                // Проверяем не сдавал ли уже студент этот тест
-                var existingSubmission = await _context.Studentassignments
-                    .FirstOrDefaultAsync(sa => sa.StudentId == userId && sa.AssignmentId == assignment.Id);
-
-                if (existingSubmission != null)
+                // Проверяем не сдавал ли уже студент этот тест (только для студентов)
+                var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                if (userRole == "Student")
                 {
-                    _logger.LogInformation("📝 Студент уже сдавал этот тест, результат: {Score}", existingSubmission.Score);
-                    return BadRequest(new
+                    var existingSubmission = await _context.Studentassignments
+                        .FirstOrDefaultAsync(sa => sa.StudentId == userId && sa.AssignmentId == assignment.Id);
+
+                    if (existingSubmission != null)
                     {
-                        message = "Вы уже сдавали этот тест",
-                        score = existingSubmission.Score
-                    });
+                        _logger.LogInformation("📝 Студент уже сдавал этот тест, результат: {Score}", existingSubmission.Score);
+                        return BadRequest(new
+                        {
+                            message = "Вы уже сдавали этот тест",
+                            score = existingSubmission.Score
+                        });
+                    }
                 }
 
                 var result = new TestDto
