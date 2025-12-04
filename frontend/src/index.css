@@ -68,6 +68,27 @@
     --border-color: #e5e5e5;
     --grid-overlay-color: rgba(0, 106, 167, 0.05);
 
+    /* ===== Глобальный стиль для select, input и button ===== */
+select,
+input {
+    height: 36px;                 /* фиксированная высота */
+    min-height: 36px;             /* для надежности */
+    padding-left: 0.75rem;        /* px-3 */
+    padding-right: 0.75rem;       /* px-3 */
+    padding-top: 0.5rem;          /* py-2 */
+    padding-bottom: 0.5rem;       /* py-2 */
+    border-radius: 0.375rem;      /* rounded-md */
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    font-size: 0.875rem;          /* text-sm */
+    line-height: 1.25rem;
+    box-sizing: border-box;       /* паддинги учитываются в высоте */
+    font-family: inherit;         /* наследуем шрифт body */
+}
+
+
+
+
     /* Шведские градиенты */
     --swedish-gradient: linear-gradient(135deg, #006AA7 0%, #FECC00 100%);
     --swedish-gradient-reverse: linear-gradient(135deg, #FECC00 0%, #006AA7 100%);
@@ -106,64 +127,6 @@
     --font-weight-bold: 700;
 }
 
-/* Dark Theme - шведские цвета */
-[data-theme="dark"] {
-    /* Шведский синий для темной темы */
-    --color-primary-50: #0c4a6e;
-    --color-primary-100: #075985;
-    --color-primary-200: #0369a1;
-    --color-primary-300: #0284c7;
-    --color-primary-400: #0ea5e9;
-    --color-primary-500: #38bdf8;
-    --color-primary-600: #7dd3fc;
-    --color-primary-700: #bae6fd;
-    --color-primary-800: #e0f2fe;
-    --color-primary-900: #f0f9ff;
-
-    /* Шведский желтый для темной темы */
-    --color-accent-50: #78350f;
-    --color-accent-100: #92400e;
-    --color-accent-200: #b45309;
-    --color-accent-300: #d97706;
-    --color-accent-400: #f59e0b;
-    --color-accent-500: #fbbf24;
-    --color-accent-600: #fcd34d;
-    --color-accent-700: #fde68a;
-    --color-accent-800: #fef3c7;
-    --color-accent-900: #fffbeb;
-
-    /* Темная тема - нейтральные цвета */
-    --color-neutral-50: #171717;
-    --color-neutral-100: #262626;
-    --color-neutral-200: #404040;
-    --color-neutral-300: #525252;
-    --color-neutral-400: #737373;
-    --color-neutral-500: #a3a3a3;
-    --color-neutral-600: #d4d4d4;
-    --color-neutral-700: #e5e5e5;
-    --color-neutral-800: #f5f5f5;
-    --color-neutral-900: #fafafa;
-
-    /* Темная тема - семантические */
-    --color-success: #34d399;
-    --color-warning: #fbbf24;
-    --color-error: #f87171;
-    --color-info: #38bdf8;
-    --color-border: #374151;
-    --color-background: #111827;
-    --color-foreground: #f9fafb;
-
-    /* Темная тема - дополнительные */
-    --bg-primary: #111827;
-    --bg-secondary: #1f2937;
-    --bg-tertiary: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #d1d5db;
-    --text-tertiary: #9ca3af;
-    --border-color: #374151;
-    --grid-overlay-color: rgba(254, 204, 0, 0.05);
-    color-scheme: dark;
-}
 
 @theme {
     --color-primary-50: var(--color-primary-50);
