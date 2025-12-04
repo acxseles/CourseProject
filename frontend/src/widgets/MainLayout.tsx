@@ -2,7 +2,6 @@ import { Outlet } from 'react-router-dom'
 import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
 import { Header } from './Header'
-import { Footer } from './Footer'
 import { Sidebar } from './Sidebar'
 
 export const MainLayout = () => {
@@ -48,10 +47,9 @@ export const MainLayout = () => {
                 </div>
 
                 <Header />
-                <main className="flex-1">
+                <main className="flex-1 section-padding">
                     <Outlet />
                 </main>
-                <Footer />
             </div>
         </div>
     )

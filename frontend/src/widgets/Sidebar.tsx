@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { BookOpen, LayoutDashboard, BookCopy, Settings, Users, Download } from 'lucide-react'
+import { BookOpen, LayoutDashboard, BookCopy, Users, Download } from 'lucide-react'
 import { useAuth } from '@/features/auth'
 
 export const Sidebar = () => {
@@ -52,14 +52,7 @@ export const Sidebar = () => {
                         <span>Мои курсы</span>
                     </Link>
                 )}
-                <Link
-                    to="/dashboard/settings"
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                    style={isActive('/dashboard/settings') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                >
-                    <Settings className="w-5 h-5" />
-                    <span>Настройки</span>
-                </Link>
+                
 
                 {/* Role-based menu items */}
                 {user?.role === 'Teacher' && (

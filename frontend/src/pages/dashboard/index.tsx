@@ -1,6 +1,6 @@
 import { useAuth } from '@/features/auth'
 import { getInitials } from '@/shared/lib'
-import { BookOpen, User, Mail, Shield } from 'lucide-react'
+import { User, Mail, Shield } from 'lucide-react'
 
 export const DashboardPage = () => {
     const { user } = useAuth()
@@ -126,30 +126,6 @@ export const DashboardPage = () => {
                             color: 'var(--text-primary)',
                         }}
                     >
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary-500 to-accent-400 flex items-center justify-center">
-                                <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-                                    Мои курсы
-                                </h2>
-                                <p className="text-sm sm:text-base text-foreground/70 mt-1">
-                                    Здесь будут ваши курсы.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl border-2 border-dashed border-primary-300 p-8 sm:p-12 text-center">
-                            <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-primary-400 mx-auto mb-4 opacity-50" />
-                            <p className="text-base sm:text-lg text-foreground font-semibold mb-2">
-                                Пока нет активных курсов
-                            </p>
-                            <p className="text-sm sm:text-base text-foreground/60 max-w-md mx-auto">
-                                Перейдите в каталог, чтобы выбрать и записаться
-                                на курс.
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>

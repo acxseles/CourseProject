@@ -21,5 +21,7 @@ public partial class Assignment
 
     public virtual Lesson Lesson { get; set; } = null!;
 
+    public virtual ICollection<Question> Questions { get; set; } = new List<Question>();
+
     public virtual ICollection<Studentassignment> Studentassignments { get; set; } = new List<Studentassignment>();
 }

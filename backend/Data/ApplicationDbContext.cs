@@ -17,7 +17,11 @@ public partial class ApplicationDbContext : DbContext
     {
     }
 
+    public virtual DbSet<Answer> Answers { get; set; }
+
     public virtual DbSet<Assignment> Assignments { get; set; }
+
+    public virtual DbSet<CalendarSession> CalendarSessions { get; set; }
 
     public virtual DbSet<Course> Courses { get; set; }
 
@@ -25,28 +29,44 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<Lesson> Lessons { get; set; }
 
+    public virtual DbSet<Question> Questions { get; set; }
+
     public virtual DbSet<Report> Reports { get; set; }
+
+    public virtual DbSet<SessionBooking> SessionBookings { get; set; }
+
+    public virtual DbSet<SpecialCourse> SpecialCourses { get; set; }
 
     public virtual DbSet<Studentassignment> Studentassignments { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        // Connection string is configured in Startup (Program.cs) via dependency injection
-        // This method is only used for design-time operations
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseMySql("server=localhost;database=school_swedish;user=root;password=root",
-                Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.41-mysql"));
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseMySql("server=localhost;database=school_swedish;user=root;password=root", Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.44-mysql"));
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
             .UseCollation("utf8mb4_0900_ai_ci")
             .HasCharSet("utf8mb4");
+
+        modelBuilder.Entity<Answer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("answers");
+
+            entity.HasIndex(e => e.QuestionId, "QuestionId_idx");
+
+            entity.Property(e => e.IsCorrect).HasDefaultValueSql("'0'");
+            entity.Property(e => e.OrderIndex).HasDefaultValueSql("'0'");
+            entity.Property(e => e.Text).HasMaxLength(500);
+
+            entity.HasOne(d => d.Question).WithMany(p => p.Answers)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("fk_answers_question");
+        });
 
         modelBuilder.Entity<Assignment>(entity =>
         {
@@ -68,6 +88,32 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.LessonId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("assignments_ibfk_1");
+        });
+
+        modelBuilder.Entity<CalendarSession>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("calendar_sessions");
+
+            entity.HasIndex(e => e.SpecialCourseId, "fk_special_course_idx");
+
+            entity.HasIndex(e => e.TeacherId, "fk_teacher_idx");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime");
+            entity.Property(e => e.EndTime).HasColumnType("time");
+            entity.Property(e => e.IsBooked).HasDefaultValueSql("'0'");
+            entity.Property(e => e.StartTime).HasColumnType("time");
+
+            entity.HasOne(d => d.SpecialCourse).WithMany(p => p.CalendarSessions)
+                .HasForeignKey(d => d.SpecialCourseId)
+                .HasConstraintName("fk_special_course");
+
+            entity.HasOne(d => d.Teacher).WithMany(p => p.CalendarSessions)
+                .HasForeignKey(d => d.TeacherId)
+                .HasConstraintName("fk_teacher");
         });
 
         modelBuilder.Entity<Course>(entity =>
@@ -119,13 +165,11 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasOne(d => d.Course).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.CourseId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("enrollments_ibfk_2");
+                .HasConstraintName("fk_enrollments_course");
 
             entity.HasOne(d => d.Student).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.StudentId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("enrollments_ibfk_1");
+                .HasConstraintName("fk_enrollments_student");
         });
 
         modelBuilder.Entity<Lesson>(entity =>
@@ -134,7 +178,7 @@ public partial class ApplicationDbContext : DbContext
 
             entity.ToTable("lessons");
 
-            entity.HasIndex(e => e.CourseId, "CourseId");
+            entity.HasIndex(e => e.CourseId, "CourseId1");
 
             entity.Property(e => e.Content).HasColumnType("text");
             entity.Property(e => e.CreatedAt)
@@ -149,13 +193,34 @@ public partial class ApplicationDbContext : DbContext
                 .HasConstraintName("lessons_ibfk_1");
         });
 
+        modelBuilder.Entity<Question>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("questions");
+
+            entity.HasIndex(e => e.AssignmentId, "AssignmentId_idx");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime");
+            entity.Property(e => e.QuestionType)
+                .HasDefaultValueSql("'MultipleChoice'")
+                .HasColumnType("enum('MultipleChoice','TrueFalse','Text')");
+            entity.Property(e => e.Text).HasMaxLength(500);
+
+            entity.HasOne(d => d.Assignment).WithMany(p => p.Questions)
+                .HasForeignKey(d => d.AssignmentId)
+                .HasConstraintName("fk_questions_assignment");
+        });
+
         modelBuilder.Entity<Report>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.ToTable("reports");
 
-            entity.HasIndex(e => e.TeacherId, "TeacherId");
+            entity.HasIndex(e => e.TeacherId, "TeacherId1");
 
             entity.Property(e => e.Data).HasColumnType("json");
             entity.Property(e => e.GeneratedAt)
@@ -168,6 +233,52 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("reports_ibfk_1");
+        });
+
+        modelBuilder.Entity<SessionBooking>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("session_bookings");
+
+            entity.HasIndex(e => e.SessionId, "fk_session_idx");
+
+            entity.HasIndex(e => e.StudentId, "fk_student_idx");
+
+            entity.HasIndex(e => new { e.SessionId, e.StudentId }, "unique_booking").IsUnique();
+
+            entity.Property(e => e.BookedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Notes).HasColumnType("text");
+            entity.Property(e => e.Status)
+                .HasDefaultValueSql("'Booked'")
+                .HasColumnType("enum('Booked','Completed','Cancelled')");
+
+            entity.HasOne(d => d.Session).WithMany(p => p.SessionBookings)
+                .HasForeignKey(d => d.SessionId)
+                .HasConstraintName("fk_session");
+
+            entity.HasOne(d => d.Student).WithMany(p => p.SessionBookings)
+                .HasForeignKey(d => d.StudentId)
+                .HasConstraintName("fk_booking_student");
+        });
+
+        modelBuilder.Entity<SpecialCourse>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("special_courses");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.DurationMinutes).HasDefaultValueSql("'60'");
+            entity.Property(e => e.IsActive).HasDefaultValueSql("'1'");
+            entity.Property(e => e.MaxParticipants).HasDefaultValueSql("'5'");
+            entity.Property(e => e.Price).HasPrecision(10, 2);
+            entity.Property(e => e.Title).HasMaxLength(255);
         });
 
         modelBuilder.Entity<Studentassignment>(entity =>

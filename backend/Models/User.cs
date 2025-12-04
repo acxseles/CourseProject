@@ -21,11 +21,15 @@ public partial class User
 
     public bool? IsActive { get; set; }
 
+    public virtual ICollection<CalendarSession> CalendarSessions { get; set; } = new List<CalendarSession>();
+
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
+    public virtual ICollection<SessionBooking> SessionBookings { get; set; } = new List<SessionBooking>();
 
     public virtual ICollection<Studentassignment> Studentassignments { get; set; } = new List<Studentassignment>();
 }

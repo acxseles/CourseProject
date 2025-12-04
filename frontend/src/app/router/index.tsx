@@ -14,7 +14,7 @@ import { RegisterPage } from '@/pages/auth/register';
 
 // Pages - Dashboard & Profile
 import { DashboardPage } from '@/pages/dashboard';
-import { SettingsPage } from '@/pages/settings';
+
 
 // Pages - Courses
 import { CourseCatalogPage } from '@/pages/courses/catalog';
@@ -106,10 +106,6 @@ export const router = createBrowserRouter([
       {
         path: 'admin',
         element: <AdminPanelPage />,
-      },
-      {
-        path: 'settings',
-        element: <SettingsPage />,
       },
     ],
   },

@@ -227,5 +227,122 @@ namespace SchoolSwedishAPI.Controllers
                 return StatusCode(500, new { message = "Ошибка при удалении курса" });
             }
         }
+
+        // Получить конкретный урок
+        [HttpGet("{courseId}/lessons/{lessonId}")]
+        public async Task<ActionResult<LessonDto>> GetLesson(int courseId, int lessonId)
+        {
+            try
+            {
+                _logger.LogInformation("📖 Запрос урока ID: {LessonId} курса ID: {CourseId}", lessonId, courseId);
+
+                var lesson = await _context.Lessons
+                    .Where(l => l.Id == lessonId && l.CourseId == courseId)
+                    .Select(l => new LessonDto
+                    {
+                        Id = l.Id,
+                        CourseId = l.CourseId,
+                        Title = l.Title,
+                        Content = l.Content,
+                        OrderIndex = l.OrderIndex,
+                        CreatedAt = l.CreatedAt
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (lesson == null)
+                {
+                    _logger.LogWarning("❌ Урок не найден ID: {LessonId} в курсе ID: {CourseId}", lessonId, courseId);
+                    return NotFound(new { message = "Урок не найден" });
+                }
+
+                _logger.LogInformation("✅ Урок найден: {Title}", lesson.Title);
+                return Ok(lesson);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при получении урока ID: {LessonId}", lessonId);
+                return StatusCode(500, new { message = "Ошибка при получении урока" });
+            }
+        }
+        // Получить все уроки курса
+        [HttpGet("{courseId}/lessons")]
+        public async Task<ActionResult<List<LessonDto>>> GetCourseLessons(int courseId)
+        {
+            try
+            {
+                _logger.LogInformation("📚 Запрос уроков для курса ID: {CourseId}", courseId);
+
+                var lessons = await _context.Lessons
+                    .Where(l => l.CourseId == courseId)
+                    .OrderBy(l => l.OrderIndex)
+                    .Select(l => new LessonDto
+                    {
+                        Id = l.Id,
+                        CourseId = l.CourseId,
+                        Title = l.Title,
+                        Content = l.Content,  // Только текст
+                        OrderIndex = l.OrderIndex,
+                        CreatedAt = l.CreatedAt
+                    })
+                    .ToListAsync();
+
+                _logger.LogInformation("✅ Получено {Count} уроков для курса ID: {CourseId}", lessons.Count, courseId);
+                return Ok(lessons);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при получении уроков для курса ID: {CourseId}", courseId);
+                return StatusCode(500, new { message = "Ошибка при получении уроков" });
+            }
+        }
+
+        // Создать новый урок в курсе
+        [HttpPost("{courseId}/lessons")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<ActionResult<LessonDto>> CreateLesson(int courseId, CreateLessonDto createLessonDto)
+        {
+            try
+            {
+                _logger.LogInformation("➕ Создание урока для курса ID: {CourseId}", courseId);
+
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null)
+                {
+                    _logger.LogWarning("❌ Курс не найден ID: {CourseId}", courseId);
+                    return NotFound(new { message = "Курс не найден" });
+                }
+
+                var lesson = new Lesson
+                {
+                    CourseId = courseId,
+                    Title = createLessonDto.Title,
+                    Content = createLessonDto.Content,  // Только текст
+                    OrderIndex = createLessonDto.OrderIndex,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Lessons.Add(lesson);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("✅ Урок создан: {Title} (ID: {LessonId})", lesson.Title, lesson.Id);
+
+                return CreatedAtAction(nameof(GetLesson),
+                    new { courseId = courseId, lessonId = lesson.Id },
+                    new LessonDto
+                    {
+                        Id = lesson.Id,
+                        CourseId = lesson.CourseId,
+                        Title = lesson.Title,
+                        Content = lesson.Content,  // Только текст
+                        OrderIndex = lesson.OrderIndex,
+                        CreatedAt = lesson.CreatedAt
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при создании урока для курса ID: {CourseId}", courseId);
+                return StatusCode(500, new { message = "Ошибка при создании урока" });
+            }
+        }
     }
 }

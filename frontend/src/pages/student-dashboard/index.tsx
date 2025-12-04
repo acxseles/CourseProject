@@ -164,7 +164,7 @@ export const StudentDashboardPage = () => {
           <CardContent className="pt-12 pb-12">
             <div className="text-center">
               <BookOpen className="w-16 h-16 text-primary-300 mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">Вы еще не записаны ни на один курс</h3>
+              <h3 className="text-xl font-semibold mb-2">Добро пожаловать!</h3>
               <p className="text-foreground/60 mb-6">Посетите каталог курсов и выберите интересующий вас курс</p>
               <Link to="/courses">
                 <Button className="bg-primary-600 hover:bg-primary-700">

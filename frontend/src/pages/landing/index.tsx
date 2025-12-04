@@ -10,6 +10,9 @@ import {
     Check,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth'
+import beginnerImage from './image/Begginer.png'
+import intermediateImage from './image/Intermadiate.png'
+import advancedImage from './image/Advanced.png'
 
 export const LandingPage = () => {
     const { isAuthenticated } = useAuth()
@@ -191,7 +194,7 @@ export const LandingPage = () => {
                         <br />
                         <p className="text-lg sm:text-xl text-foreground/70">
                             Мы предлагаем курсы для всех уровней подготовки - от
-                            полных начинающих до продвинутых студентов
+                            глупеньких начинающих до продвинутых студентов
                         </p>
                         <br />
                     </div>
@@ -202,8 +205,8 @@ export const LandingPage = () => {
                                 title: 'Шведский для начинающих',
                                 level: 'Начальный',
                                 duration: '40 часов',
-                                price: '5000 ₽',
-                                gradient: 'from-green-400 to-blue-500',
+                                price: '5000 $',
+                                image: beginnerImage,
                                 features: [
                                     'Алфавит и произношение',
                                     'Базовая грамматика',
@@ -214,8 +217,8 @@ export const LandingPage = () => {
                                 title: 'Разговорный шведский',
                                 level: 'Средний',
                                 duration: '30 часов',
-                                price: '7000 ₽',
-                                gradient: 'from-purple-400 to-pink-500',
+                                price: '7000 $',
+                                image: intermediateImage,
                                 featured: true,
                                 features: [
                                     'Разговорная практика',
@@ -227,8 +230,8 @@ export const LandingPage = () => {
                                 title: 'Продвинутый шведский',
                                 level: 'Продвинутый',
                                 duration: '35 часов',
-                                price: '9000 ₽',
-                                gradient: 'from-orange-400 to-red-500',
+                                price: '9000 $',
+                                image: advancedImage,
                                 features: [
                                     'Сложная грамматика',
                                     'Бизнес-шведский',
@@ -245,14 +248,17 @@ export const LandingPage = () => {
                                 }`}
                                 style={{backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)'}}
                             >
-                                <div
-                                    className={`bg-linear-to-br ${course.gradient} h-40 relative`}
-                                >
+                                <div 
+                        className="h-48 relative bg-cover bg-center"
+                        style={{
+                            backgroundImage: `url(${course.image})`,
+                        }}
+                    >
                                     {course.featured && (
                                         <div className="absolute top-4 right-4">
-                                            <span className="px-3 py-1 rounded-full text-sm font-semibold shadow-lg" style={{backgroundColor: 'rgba(255, 255, 255, 0.95)', color: 'var(--color-primary-700)'}}>
-                                                Популярный
-                                            </span>
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary-500 text-white">
+                                    Популярный
+                                </span>
                                         </div>
                                     )}
                                 </div>
@@ -363,31 +369,7 @@ export const LandingPage = () => {
                             backgroundSize: '20px 20px',
                         }}
                     />
-                    <div className="relative container animate-on-scroll space-y-12 justify-items-center">
-                        <div className="max-w-3xl mx-auto text-center">
-                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
-                                Готовы начать обучение?
-                            </h2>
-                            <p className="text-lg sm:text-xl lg:text-2xl text-white/90 mb-12 leading-relaxed">
-                                Присоединяйтесь к тысячам студентов, которые уже
-                                изучают шведский язык и достигают своих целей
-                            </p>
-                            <Link to="/auth/register" className="inline-block">
-                                <Button
-                                    variant="primary"
-                                    size="lg"
-                                    className="gap-2 border-0 shadow-xl"
-                                    style={{
-                                        backgroundColor: 'white',
-                                        color: 'var(--color-primary-700)',
-                                    }}
-                                >
-                                    <span>Создать аккаунт сейчас</span>
-                                    <ArrowRight className="w-5 h-5" />
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
+                    
                 </section>
             )}
         </div>

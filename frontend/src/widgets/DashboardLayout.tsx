@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { Menu, X, LogOut } from 'lucide-react'
 import { useLogout } from '@/features/auth'
 import { Button } from '@/shared/ui'
-import { Footer } from './Footer'
 import { Sidebar } from './Sidebar'
 
 export const DashboardLayout = () => {
@@ -93,8 +92,6 @@ export const DashboardLayout = () => {
                         <Outlet />
                     </div>
                 </main>
-
-                <Footer />
             </div>
         </div>
     )
