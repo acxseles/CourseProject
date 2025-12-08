@@ -170,17 +170,19 @@ namespace SchoolSwedishAPI.Controllers
             }
         }
 
-        // DELETE: api/users/
         [HttpDelete("student/{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteStudent(int id)
         {
             try
             {
-                _logger.LogInformation("Удаление студента {StudentId}", id);
+                _logger.LogInformation("Попытка удаления студента {StudentId}", id);
 
                 // Ищем студента
                 var student = await _context.Users
+                    .Include(u => u.Enrollments)
+                    .Include(u => u.Studentassignments)
+                    .Include(u => u.SessionBookings)
                     .FirstOrDefaultAsync(u => u.Id == id && u.Role == "Student");
 
                 if (student == null)
@@ -188,32 +190,23 @@ namespace SchoolSwedishAPI.Controllers
                     return NotFound(new { message = "Студент не найден" });
                 }
 
-                // Меняем статус записей на "Dropped" вместо удаления
-                var studentEnrollments = await _context.Enrollments
-                    .Where(e => e.StudentId == id && e.Status == "Active")
-                    .ToListAsync();
+                // Удаляем связанные записи, если они есть
+                if (student.Enrollments.Any())
+                    _context.Enrollments.RemoveRange(student.Enrollments);
 
-                if (studentEnrollments.Any())
-                {
-                    foreach (var enrollment in studentEnrollments)
-                    {
-                        enrollment.Status = "Dropped";
-                    }
-                    await _context.SaveChangesAsync();
-                }
+                if (student.Studentassignments.Any())
+                    _context.Studentassignments.RemoveRange(student.Studentassignments);
 
-                // Удаляем студента
+                if (student.SessionBookings.Any())
+                    _context.SessionBookings.RemoveRange(student.SessionBookings);
+
+                // Удаляем самого студента
                 _context.Users.Remove(student);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Студент {StudentId} удален, {Count} записей помечено как Dropped",
-                    id, studentEnrollments.Count);
+                _logger.LogInformation("Студент {StudentId} успешно удален", id);
 
-                return Ok(new
-                {
-                    message = "Студент успешно удален",
-                    droppedEnrollments = studentEnrollments.Count
-                });
+                return Ok(new { message = "Студент успешно удален" });
             }
             catch (Exception ex)
             {

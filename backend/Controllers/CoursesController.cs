@@ -460,5 +460,121 @@ namespace SchoolSwedishAPI.Controllers
                 return StatusCode(500, new { message = "Ошибка при удалении урока" });
             }
         }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<ActionResult<CourseDto>> UpdateCourse(int id, [FromBody] UpdateCourseDto updateCourseDto)
+        {
+            try
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+                var currentUserId = int.Parse(userIdString);
+                var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                _logger.LogInformation("Попытка обновления курса ID: {CourseId} пользователем {UserId}",
+                    id, currentUserId);
+
+                var course = await _context.Courses
+                    .Include(c => c.Teacher)
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
+                if (course == null)
+                {
+                    _logger.LogWarning("Курс {CourseId} не найден", id);
+                    return NotFound(new { message = "Курс не найден" });
+                }
+
+                // Проверка прав доступа: только админ или создатель курса может обновлять
+                if (currentUserRole != "Admin" && course.TeacherId != currentUserId)
+                {
+                    _logger.LogWarning("Пользователь {UserId} не имеет прав для обновления курса {CourseId}",
+                        currentUserId, id);
+                    return Forbid();
+                }
+
+                // Обновляем только те поля, которые пришли в запросе (без UpdatedAt)
+                if (!string.IsNullOrEmpty(updateCourseDto.Title))
+                {
+                    course.Title = updateCourseDto.Title;
+                }
+
+                if (!string.IsNullOrEmpty(updateCourseDto.Description))
+                {
+                    course.Description = updateCourseDto.Description;
+                }
+
+                if (!string.IsNullOrEmpty(updateCourseDto.Level))
+                {
+                    course.Level = updateCourseDto.Level;
+                }
+
+                if (updateCourseDto.Price.HasValue)
+                {
+                    course.Price = updateCourseDto.Price.Value;
+                }
+
+                if (updateCourseDto.DurationHours.HasValue)
+                {
+                    course.DurationHours = updateCourseDto.DurationHours.Value;
+                }
+
+                // Админ может изменить преподавателя курса
+                if (currentUserRole == "Admin" && updateCourseDto.TeacherId.HasValue)
+                {
+                    // Проверяем, существует ли преподаватель
+                    var teacherExists = await _context.Users.AnyAsync(u =>
+                        u.Id == updateCourseDto.TeacherId.Value && u.Role == "Teacher");
+
+                    if (teacherExists)
+                    {
+                        course.TeacherId = updateCourseDto.TeacherId.Value;
+                        _logger.LogInformation("Админ изменил преподавателя курса на ID: {TeacherId}",
+                            updateCourseDto.TeacherId.Value);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Преподаватель с ID: {TeacherId} не найден",
+                            updateCourseDto.TeacherId.Value);
+                    }
+                }
+
+                // Если у вас есть поля IsActive и MaxStudents в модели, можно добавить и их обновление:
+                if (updateCourseDto.IsActive.HasValue)
+                {
+                    course.IsActive = updateCourseDto.IsActive.Value;
+                }
+
+                if (updateCourseDto.MaxStudents.HasValue)
+                {
+                    course.MaxStudents = updateCourseDto.MaxStudents.Value;
+                }
+
+                _context.Courses.Update(course);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Курс {CourseId} успешно обновлен пользователем {UserId}",
+                    id, currentUserId);
+
+                // Возвращаем обновленный курс
+                var updatedCourse = new CourseDto
+                {
+                    Id = course.Id,
+                    Title = course.Title ?? "",
+                    Description = course.Description ?? "",
+                    Level = course.Level ?? "",
+                    Price = course.Price,
+                    DurationHours = course.DurationHours,
+                    TeacherId = course.TeacherId,
+                    TeacherName = course.Teacher.FirstName + " " + course.Teacher.LastName
+                };
+
+                return Ok(updatedCourse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при обновлении курса {CourseId}", id);
+                return StatusCode(500, new { message = "Ошибка при обновлении курса" });
+            }
+        }
     }
 }
