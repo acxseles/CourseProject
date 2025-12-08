@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useGetAllUsers } from '@/features/users'
-import { useDeleteStudent } from '@/features/users'
+
+import { useGetAllUsers, useDeleteStudent } from '@/features/users'
 import {
     Card,
     CardContent,
@@ -15,7 +15,6 @@ import {
     AlertCircle,
     Trash2,
     Shield,
-    Search,
 } from 'lucide-react'
 
 export const AdminPanelPage = () => {
@@ -29,16 +28,13 @@ export const AdminPanelPage = () => {
 
     const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0
 
-    // Filter users based on search and role
     const filteredUsers = data?.items.filter((user) => {
         const matchesSearch =
             !search ||
             user.email.toLowerCase().includes(search.toLowerCase()) ||
             user.firstName.toLowerCase().includes(search.toLowerCase()) ||
             user.lastName.toLowerCase().includes(search.toLowerCase())
-
         const matchesRole = !roleFilter || user.role === roleFilter
-
         return matchesSearch && matchesRole
     })
 
@@ -49,235 +45,165 @@ export const AdminPanelPage = () => {
     }
 
     return (
-        <div className="flex flex-col gap-3 pb-16">
-            {/* Header */}
-            <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 flex items-center gap-3">
-                    <Shield className="w-8 h-8 text-primary-600" />
-                    Панель администратора
-                </h1>
-                <p className="text-base sm:text-lg text-foreground/70">
-                    Управляйте пользователями и отслеживайте статистику системы
-                </p>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <Card>
-                    <CardContent className="pt-6 flex flex-row gap-4 items-center justify-around">
-                        <UsersIcon className="w-10 h-10 text-primary-600 shrink-0" />
-                        <div>
-                            <p className="text-sm text-foreground/60 mb-1">
-                                Пользователей
-                            </p>
-                        </div>
-                        <p className="text-3xl font-bold">
-                            {data?.totalCount || 0}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6 flex flex-row gap-4 items-center justify-around">
-                        <UsersIcon className="w-10 h-10 text-secondary-600 shrink-0" />
-                        <div>
-                            <p className="text-sm text-foreground/60 mb-1">
-                                Студентов
-                            </p>
-                        </div>
-                        <p className="text-3xl font-bold">
-                            {data?.items.filter((u) => u.role === 'Student')
-                                .length || 0}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6 flex flex-row gap-4 items-center justify-around">
-                        <UsersIcon className="w-10 h-10 text-accent-600 shrink-0" />
-                        <div>
-                            <p className="text-sm text-foreground/60 mb-1">
-                                Преподавателей
-                            </p>
-                        </div>
-                        <p className="text-3xl font-bold">
-                            {data?.items.filter((u) => u.role === 'Teacher')
-                                .length || 0}
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Filters */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Фильтры и поиск</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-2">
-                                Поиск по email или имени
-                            </label>
-                            <Input
-                                placeholder="Введите email или имя..."
-                                value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value)
-                                    setPage(1)
-                                }}
-                                className="w-full"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-2">
-                                Роль
-                            </label>
-                            <select
-                                value={roleFilter}
-                                onChange={(e) => {
-                                    setRoleFilter(e.target.value)
-                                    setPage(1)
-                                }}
-                                className="w-full px-3 py-2 border rounded-md bg-background"
-                            >
-                                <option value="">Все роли</option>
-                                <option value="Student">Студент</option>
-                                <option value="Teacher">Преподаватель</option>
-                                <option value="Admin">Администратор</option>
-                            </select>
-                        </div>
-
-                        <div className="flex items-end">
-                            <Button
-                                onClick={() => {
-                                    setSearch('')
-                                    setRoleFilter('')
-                                    setPage(1)
-                                }}
-                                variant="outline"
-                                className="w-full"
-                            >
-                                Очистить фильтры
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Loading State */}
-            {isLoading && (
-                <div className="flex justify-center items-center py-12">
-                    <Loader className="w-8 h-8 animate-spin text-primary-600" />
+        <div className="min-h-screen bg-blue-50 py-10 px-4 sm:px-8">
+            <div className="max-w-7xl mx-auto flex flex-col gap-6">
+                {/* Header */}
+                <div className="text-center sm:text-left">
+                    <h1 className="text-4xl font-bold text-gray-900 flex items-center justify-center sm:justify-start gap-3 mb-2">
+                        <Shield className="w-10 h-10 text-primary-600" />
+                        Панель администратора
+                    </h1>
+                    <p className="text-gray-600 text-lg">
+                        Управляйте пользователями и отслеживайте статистику системы
+                    </p>
                 </div>
-            )}
 
-            {/* Error State */}
-            {error && (
-                <Card className="border-red-200 bg-red-50">
+                {/* Stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                        {
+                            label: 'Пользователей',
+                            value: data?.totalCount || 0,
+                            icon: <UsersIcon className="w-10 h-10 text-primary-600" />,
+                            bg: 'bg-blue-50',
+                            text: 'text-blue-700',
+                        },
+                        {
+                            label: 'Студентов',
+                            value: data?.items.filter((u) => u.role === 'Student').length || 0,
+                            icon: <UsersIcon className="w-10 h-10 text-green-600" />,
+                            bg: 'bg-green-50',
+                            text: 'text-green-700',
+                        },
+                        {
+                            label: 'Преподавателей',
+                            value: data?.items.filter((u) => u.role === 'Teacher').length || 0,
+                            icon: <UsersIcon className="w-10 h-10 text-purple-600" />,
+                            bg: 'bg-purple-50',
+                            text: 'text-purple-700',
+                        },
+                    ].map((stat, idx) => (
+                        <Card key={idx} className="hover:shadow-lg transition-shadow">
+                            <CardContent className="flex items-center gap-4 p-6">
+                                <div className={`p-3 rounded-full ${stat.bg} flex items-center justify-center`}>
+                                    {stat.icon}
+                                </div>
+                                <div className="flex flex-col flex-1">
+                                    <span className="text-sm text-gray-500">{stat.label}</span>
+                                    <span className={`text-3xl font-bold ${stat.text}`}>{stat.value}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Filters */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Фильтры и поиск</CardTitle>
+                    </CardHeader>
                     <CardContent>
-                        <div className="flex items-start gap-4">
-                            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Поиск без иконки */}
                             <div>
-                                <h3 className="font-semibold text-red-900 mb-1">
-                                    Ошибка загрузки
-                                </h3>
-                                <p className="text-sm text-red-800">
-                                    Не удалось загрузить пользователей.
-                                    Попробуйте позже.
-                                </p>
+                                <Input
+                                    placeholder="Поиск по email или имени"
+                                    value={search}
+                                    onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                                    className="w-full"
+                                />
+                            </div>
+
+                            {/* Селект ролей */}
+                            <div>
+                                <select
+                                    value={roleFilter}
+                                    onChange={(e) => { setRoleFilter(e.target.value); setPage(1) }}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <option value="">Все роли</option>
+                                    <option value="Student">Студент</option>
+                                    <option value="Teacher">Преподаватель</option>
+                                    <option value="Admin">Администратор</option>
+                                </select>
+                            </div>
+
+                            {/* Кнопка очистки */}
+                            <div className="flex items-center">
+                                <Button
+                                    onClick={() => { setSearch(''); setRoleFilter(''); setPage(1) }}
+                                    variant="outline"
+                                    className="w-full"
+                                >
+                                    Очистить фильтры
+                                </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-            )}
 
-            {/* Users Table */}
-            {!isLoading && filteredUsers && filteredUsers.length > 0 && (
-                <>
-                    <Card className="overflow-hidden mb-6">
-                        <div className="overflow-auto max-h-40">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b bg-primary-50">
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">
-                                            Имя
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">
-                                            Email
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">
-                                            Роль
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">
-                                            Дата регистрации
-                                        </th>
-                                        <th className="px-6 py-3 text-right text-sm font-semibold">
-                                            Действия
-                                        </th>
+                {/* Loading & Error */}
+                {isLoading && (
+                    <div className="flex justify-center py-12">
+                        <Loader className="w-10 h-10 animate-spin text-primary-600" />
+                    </div>
+                )}
+
+                {error && (
+                    <Card className="border-red-200 bg-red-50">
+                        <CardContent className="flex items-start gap-4">
+                            <AlertCircle className="w-5 h-5 text-red-600 mt-1" />
+                            <div>
+                                <h3 className="font-semibold text-red-900">Ошибка загрузки</h3>
+                                <p className="text-red-800 text-sm">
+                                    Не удалось загрузить пользователей. Попробуйте позже.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Users Table */}
+                {!isLoading && filteredUsers && filteredUsers.length > 0 && (
+                    <Card className="overflow-hidden shadow-lg">
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[600px]">
+                                <thead className="bg-gray-100 border-b">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Имя</th>
+                                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Роль</th>
+                                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Дата регистрации</th>
+                                        <th className="px-6 py-3 text-right text-sm font-medium text-gray-700">Действия</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredUsers.map((user) => (
-                                        <tr
-                                            key={user.id}
-                                            className="border-b hover:bg-primary-50 transition-colors"
-                                        >
+                                        <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 font-semibold">{user.firstName} {user.lastName}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
                                             <td className="px-6 py-4">
-                                                <div>
-                                                    <p className="font-semibold">
-                                                        {user.firstName}{' '}
-                                                        {user.lastName}
-                                                    </p>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm">
-                                                {user.email}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span
-                                                    style={{
-                                                        padding:
-                                                            '0.25rem 0.25rem',
-                                                    }}
-                                                    className={`inline-block rounded-full text-xs font-semibold whitespace-nowrap ${
-                                                        user.role === 'Student'
-                                                            ? 'bg-blue-100 text-blue-700'
-                                                            : user.role ===
-                                                              'Teacher'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-purple-100 text-purple-700'
-                                                    }`}
-                                                >
-                                                    {user.role === 'Student' &&
-                                                        'Студент'}
-                                                    {user.role === 'Teacher' &&
-                                                        'Преподаватель'}
-                                                    {user.role === 'Admin' &&
-                                                        'Администратор'}
+                                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    user.role === 'Student' ? 'bg-blue-100 text-blue-700' :
+                                                    user.role === 'Teacher' ? 'bg-green-100 text-green-700' :
+                                                    'bg-purple-100 text-purple-700'
+                                                }`}>
+                                                    {user.role === 'Student' ? 'Студент' :
+                                                     user.role === 'Teacher' ? 'Преподаватель' :
+                                                     'Администратор'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-foreground/70">
-                                                {new Date(
-                                                    user.createdAt
-                                                ).toLocaleDateString('ru-RU')}
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                {new Date(user.createdAt).toLocaleDateString('ru-RU')}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 {user.role === 'Student' && (
                                                     <Button
-                                                        onClick={() =>
-                                                            handleDeleteStudent(
-                                                                user.id,
-                                                                `${user.firstName} ${user.lastName}`
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            deleteStudentMutation.isPending
-                                                        }
+                                                        onClick={() => handleDeleteStudent(user.id, `${user.firstName} ${user.lastName}`)}
+                                                        disabled={deleteStudentMutation.isPending}
                                                         variant="outline"
                                                         size="sm"
-                                                        className="border-red-200 text-red-600 hover:bg-red-50"
+                                                        className="border-red-300 text-red-600 hover:bg-red-50"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
@@ -288,61 +214,47 @@ export const AdminPanelPage = () => {
                                 </tbody>
                             </table>
                         </div>
-                    </Card>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-2 mt-8">
-                            <Button
-                                onClick={() => setPage(Math.max(1, page - 1))}
-                                disabled={page === 1}
-                                variant="outline"
-                            >
-                                Предыдущая
-                            </Button>
-                            {Array.from(
-                                { length: totalPages },
-                                (_, i) => i + 1
-                            ).map((p) => (
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-2 mt-4 py-2 flex-wrap">
                                 <Button
-                                    key={p}
-                                    onClick={() => setPage(p)}
-                                    variant={p === page ? 'default' : 'outline'}
-                                    className="w-10 h-10 p-0"
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page === 1}
+                                    variant="outline"
                                 >
-                                    {p}
+                                    Предыдущая
                                 </Button>
-                            ))}
-                            <Button
-                                onClick={() =>
-                                    setPage(Math.min(totalPages, page + 1))
-                                }
-                                disabled={page === totalPages}
-                                variant="outline"
-                            >
-                                Следующая
-                            </Button>
-                        </div>
-                    )}
-                </>
-            )}
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                    <Button
+                                        key={p}
+                                        onClick={() => setPage(p)}
+                                        variant={p === page ? 'default' : 'outline'}
+                                        className="w-10 h-10 p-0 rounded-full"
+                                    >
+                                        {p}
+                                    </Button>
+                                ))}
+                                <Button
+                                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                                    disabled={page === totalPages}
+                                    variant="outline"
+                                >
+                                    Следующая
+                                </Button>
+                            </div>
+                        )}
+                    </Card>
+                )}
 
-            {/* Empty State */}
-            {!isLoading && filteredUsers && filteredUsers.length === 0 && (
-                <Card>
-                    <CardContent className="pt-12 pb-12">
-                        <div className="text-center">
-                            <Search className="w-16 h-16 text-primary-300 mx-auto mb-4 opacity-50" />
-                            <h3 className="text-xl font-semibold mb-2">
-                                Пользователи не найдены
-                            </h3>
-                            <p className="text-foreground/60">
-                                Попробуйте изменить параметры поиска или фильтры
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+                {/* Empty State */}
+                {!isLoading && filteredUsers && filteredUsers.length === 0 && (
+                    <Card className="text-center py-12">
+                        <h3 className="text-xl font-semibold mb-2">Пользователи не найдены</h3>
+                        <p className="text-gray-500">Попробуйте изменить параметры поиска или фильтры</p>
+                    </Card>
+                )}
+            </div>
         </div>
     )
 }

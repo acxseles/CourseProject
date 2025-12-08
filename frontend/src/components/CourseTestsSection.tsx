@@ -80,7 +80,7 @@ export const CourseTestsSection = ({ courseId }: CourseTestsSectionProps) => {
                     </div>
                   </div>
                   <div className="flex-shrink-0 ml-4">
-                    <Button variant="ghost" size="sm" className="text-primary-600">
+                    <Button variant="ghost" size="sm" className="text-blue-600 text-primary-600">
                       Пройти →
                     </Button>
                   </div>

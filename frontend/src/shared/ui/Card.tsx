@@ -32,9 +32,10 @@ interface CardHeaderProps {
 export const CardHeader = ({ title, description }: CardHeaderProps) => {
   return (
     <div className="mb-6 pb-4 border-b border-border w-full">
-      <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-secondary-600 bg-clip-text text-transparent">
-        {title}
-      </h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+  {title}
+</h2>
+
       {description && (
         <p className="text-sm sm:text-base text-foreground/70 mt-2">{description}</p>
       )}

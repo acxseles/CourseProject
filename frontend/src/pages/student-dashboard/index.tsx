@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { useGetStudentEnrollments, useCancelEnrollment } from '@/features/enrollments';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/shared/ui';
-import { BookOpen, Loader, AlertCircle, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button } from '@/shared/ui';
+import { Loader, AlertCircle, Trash2 } from 'lucide-react';
 
 export const StudentDashboardPage = () => {
   const { user } = useAuth();
@@ -17,44 +17,41 @@ export const StudentDashboardPage = () => {
     onSuccess: () => setCancelError(null),
   });
 
-  const handleCancel = (enrollmentId: number) => {
-    cancelMutation.mutate(enrollmentId);
-  };
-
+  const handleCancel = (enrollmentId: number) => cancelMutation.mutate(enrollmentId);
   const totalPages = data ? Math.ceil(data.totalCount / pageSize) : 0;
 
   return (
-    <div>
+    <div className="space-y-8 min-h-screen bg-blue-50 p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Мои курсы</h1>
-        <p className="text-base sm:text-lg text-foreground/70">
+      <div>
+        <h1 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-2">Мои курсы</h1>
+        <p className="text-base sm:text-lg text-blue-700/70">
           Здесь вы можете просмотреть курсы, на которые вы записаны
         </p>
       </div>
 
       {/* Action Button */}
-      <div className="mb-6">
+      <div>
         <Link to="/courses">
-          <Button className="bg-primary-600 hover:bg-primary-700">
+          <Button className="bg-white text-blue-600 hover:bg-blue-100 border border-blue-200">
             Найти новые курсы
           </Button>
         </Link>
       </div>
 
-      {/* Loading State */}
+      {/* Loading */}
       {isLoading && (
         <div className="flex justify-center items-center py-12">
-          <Loader className="w-8 h-8 animate-spin text-primary-600" />
+          <Loader className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       )}
 
-      {/* Error State */}
+      {/* Error */}
       {error && (
-        <Card className="border-red-200 bg-red-50 mb-6">
+        <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-red-900 mb-1">Ошибка загрузки</h3>
                 <p className="text-sm text-red-800">Не удалось загрузить ваши курсы. Попробуйте позже.</p>
@@ -64,12 +61,12 @@ export const StudentDashboardPage = () => {
         </Card>
       )}
 
-      {/* Cancel Error State */}
+      {/* Cancel Error */}
       {cancelError && (
-        <Card className="border-red-200 bg-red-50 mb-6">
+        <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-red-900 mb-1">Ошибка</h3>
                 <p className="text-sm text-red-800">{cancelError}</p>
@@ -80,48 +77,32 @@ export const StudentDashboardPage = () => {
       )}
 
       {/* Enrollments Grid */}
-      {!isLoading && data?.items && data.items.length > 0 && (
+      {!isLoading && data?.items?.length ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {data.items.map((enrollment) => (
-              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow">
+              <Card key={enrollment.id} className="hover:shadow-lg transition-shadow bg-white">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-xl mb-1">{enrollment.courseTitle || enrollment.courseName}</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-xl mb-1 text-blue-900">{enrollment.courseTitle || enrollment.courseName}</CardTitle>
+                      <CardDescription className="text-blue-700/70">
                         Записаны: {new Date(enrollment.enrollmentDate || enrollment.enrolledAt || '').toLocaleDateString('ru-RU')}
                       </CardDescription>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-primary-600" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-foreground/60">Прогресс</span>
-                      <span className="font-semibold">0%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-primary-600 h-2 rounded-full" style={{ width: '0%' }}></div>
-                    </div>
-                  </div>
+                  
 
+                  {/* Actions */}
                   <div className="flex gap-2">
                     <Link to={`/courses/${enrollment.courseId}/lessons`} className="flex-1">
-                      <Button className="w-full bg-primary-600 hover:bg-primary-700">
+                      <Button className="w-full bg-white text-blue-600 hover:bg-blue-100 border border-blue-200">
                         Продолжить обучение
                       </Button>
                     </Link>
-                    <button
-                      onClick={() => handleCancel(enrollment.id)}
-                      disabled={cancelMutation.isPending}
-                      className="inline-flex items-center justify-center rounded-lg p-2 text-red-600 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    
                   </div>
                 </CardContent>
               </Card>
@@ -130,11 +111,11 @@ export const StudentDashboardPage = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2">
+            <div className="flex justify-center items-center gap-2 mt-6">
               <Button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                variant="outline"
+                className="text-blue-600 border border-blue-200 hover:bg-blue-100"
               >
                 Предыдущая
               </Button>
@@ -142,8 +123,7 @@ export const StudentDashboardPage = () => {
                 <Button
                   key={p}
                   onClick={() => setPage(p)}
-                  variant={p === page ? 'default' : 'outline'}
-                  className="w-10 h-10 p-0"
+                  className={`w-10 h-10 p-0 ${p === page ? 'bg-blue-600 text-white' : 'text-blue-600 border border-blue-200 hover:bg-blue-100'}`}
                 >
                   {p}
                 </Button>
@@ -151,31 +131,30 @@ export const StudentDashboardPage = () => {
               <Button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
-                variant="outline"
+                className="text-blue-600 border border-blue-200 hover:bg-blue-100"
               >
                 Следующая
               </Button>
             </div>
           )}
         </>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && (!data?.items || data.items.length === 0) && (
-        <Card>
-          <CardContent className="pt-12 pb-12">
-            <div className="text-center">
-              <BookOpen className="w-16 h-16 text-primary-300 mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">Добро пожаловать!</h3>
-              <p className="text-foreground/60 mb-6">Посетите каталог курсов и выберите интересующий вас курс</p>
-              <Link to="/courses">
-                <Button className="bg-primary-600 hover:bg-primary-700">
-                  Перейти в каталог
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+      ) : (
+        // Empty State
+        !isLoading && (
+          <Card className="bg-white">
+            <CardContent className="pt-12 pb-12">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold mb-2 text-blue-900">Добро пожаловать!</h3>
+                <p className="text-blue-700/70 mb-6">Посетите каталог курсов и выберите интересующий вас курс</p>
+                <Link to="/courses">
+                  <Button className="bg-white text-blue-600 hover:bg-blue-100 border border-blue-200">
+                    Перейти в каталог
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )
       )}
     </div>
   );

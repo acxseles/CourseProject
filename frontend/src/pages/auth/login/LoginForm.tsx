@@ -28,9 +28,9 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="w-full">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-secondary-600 bg-clip-text text-transparent mb-2">Вход в систему</h2>
-      <p className="text-foreground/70 mb-8">Введите ваши учетные данные для доступа</p>
+    <div className="w-full max-w-xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+      <h2 className="text-4xl font-bold text-foreground mb-4">Вход в систему</h2>
+      <p className="text-foreground/70 mb-8 text-lg">Введите ваши учетные данные для доступа</p>
 
       {error && (
         <Alert type="error" className="mb-6">
@@ -55,21 +55,26 @@ export const LoginForm = () => {
           {...register('password')}
         />
 
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full py-3 text-lg gap-2"
-          loading={isPending}
-        >
-          <LogIn className="w-5 h-5" />
-          <span>Войти</span>
-        </Button>
+        {/* Кнопка */}
+      <Button
+  type="submit"
+  variant="primary"
+  className="w-full py-4 text-blue-600 rounded-xl flex justify-center items-center gap-2"
+  loading={isPending}
+>
+  <LogIn className="w-6 h-6" />
+  Войти
+</Button>
+
       </form>
 
       <div className="mt-8 pt-8 border-t border-border text-center">
-        <p className="text-foreground/70 mb-3">
+        <p className="text-foreground/70 mb-3 text-lg">
           Нет аккаунта?{' '}
-          <Link to="/auth/register" className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent font-semibold hover:opacity-80">
+          <Link
+            to="/auth/register"
+            className="text-primary-600 font-semibold hover:opacity-80"
+          >
             Зарегистрируйтесь
           </Link>
         </p>

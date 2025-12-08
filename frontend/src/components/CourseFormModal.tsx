@@ -3,9 +3,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Modal } from '@/shared/ui/Modal';
 import { Button, Input } from '@/shared/ui';
-import { useCreateCourse, useUpdateCourse } from '@/features/courses';
+import { useCreateCourse } from '@/features/courses';
 import { useCreateLesson } from '@/features/lessons';
-import type { Course, CreateLessonDto } from '@/shared/types';
+import type { CreateLessonDto } from '@/shared/types';
 import { Loader, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,353 +22,281 @@ type CourseFormData = z.infer<typeof courseSchema>;
 interface CourseFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  course?: Course;
 }
 
-export const CourseFormModal = ({ isOpen, onClose, course }: CourseFormModalProps) => {
-  const createMutation = useCreateCourse();
-  const updateMutation = useUpdateCourse();
+export const CourseFormModal = ({ isOpen, onClose }: CourseFormModalProps) => {
+  const createCourseMutation = useCreateCourse();
   const createLessonMutation = useCreateLesson();
-  const isEditing = !!course;
-  const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  // State for lessons management
-  const [lessons, setLessons] = useState<(CreateLessonDto & { tempId?: string })[]>([]);
+  const [lessons, setLessons] = useState<(CreateLessonDto & { tempId: string })[]>([]);
   const [expandedLessonId, setExpandedLessonId] = useState<string | null>(null);
   const [showLessonsForm, setShowLessonsForm] = useState(false);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
     reset,
+    formState: { errors },
   } = useForm<CourseFormData>({
     resolver: zodResolver(courseSchema),
-    defaultValues: course
-      ? {
-          title: course.title,
-          description: course.description,
-          level: course.level,
-          price: course.price,
-          durationHours: course.durationHours,
-        }
-      : {
-          level: 'Beginner',
-        },
+    defaultValues: { level: 'Beginner' },
   });
-
-  const onSubmit = async (data: CourseFormData) => {
-    try {
-      let courseId: number;
-
-      if (isEditing && course) {
-        await updateMutation.mutateAsync({
-          id: course.id,
-          data: data,
-        });
-        courseId = course.id;
-      } else {
-        const newCourse = await createMutation.mutateAsync(data);
-        courseId = newCourse.id;
-      }
-
-      // Add lessons if course exists
-      if (courseId && lessons.length > 0) {
-        for (const lesson of lessons) {
-          const { tempId, ...lessonData } = lesson;
-          try {
-            await createLessonMutation.mutateAsync({
-              courseId,
-              data: lessonData,
-            });
-          } catch (error) {
-            console.error('Error creating lesson:', error);
-          }
-        }
-      }
-
-      reset();
-      setLessons([]);
-      setShowLessonsForm(false);
-      onClose();
-    } catch (error) {
-      console.error('Error saving course:', error);
-    }
-  };
 
   const addLesson = () => {
     const tempId = `lesson-${Date.now()}`;
     setLessons([
       ...lessons,
-      {
-        title: '',
-        content: '',
-        orderIndex: lessons.length + 1,
-        tempId,
-      },
+      { tempId, title: '', content: '', orderIndex: lessons.length + 1 },
     ]);
     setExpandedLessonId(tempId);
   };
 
-  const removeLesson = (tempId?: string) => {
-    setLessons(lessons.filter(l => l.tempId !== tempId));
-    if (expandedLessonId === tempId) {
-      setExpandedLessonId(null);
-    }
+  const removeLesson = (tempId: string) => {
+    setLessons(lessons.filter((l) => l.tempId !== tempId));
+    if (expandedLessonId === tempId) setExpandedLessonId(null);
   };
 
-  const updateLesson = (tempId: string | undefined, updates: Partial<CreateLessonDto>) => {
-    setLessons(
-      lessons.map(l =>
-        l.tempId === tempId ? { ...l, ...updates } : l
-      )
-    );
+  const updateLesson = (tempId: string, updates: Partial<CreateLessonDto>) => {
+    setLessons(lessons.map((l) => (l.tempId === tempId ? { ...l, ...updates } : l)));
   };
 
   const moveLessonUp = (index: number) => {
-    if (index > 0) {
-      const newLessons = [...lessons];
-      [newLessons[index], newLessons[index - 1]] = [newLessons[index - 1], newLessons[index]];
-      // Update orderIndex
-      newLessons.forEach((lesson, idx) => {
-        lesson.orderIndex = idx + 1;
-      });
-      setLessons(newLessons);
-    }
+    if (index === 0) return;
+    const list = [...lessons];
+    [list[index], list[index - 1]] = [list[index - 1], list[index]];
+    list.forEach((l, i) => (l.orderIndex = i + 1));
+    setLessons(list);
   };
 
   const moveLessonDown = (index: number) => {
-    if (index < lessons.length - 1) {
-      const newLessons = [...lessons];
-      [newLessons[index], newLessons[index + 1]] = [newLessons[index + 1], newLessons[index]];
-      // Update orderIndex
-      newLessons.forEach((lesson, idx) => {
-        lesson.orderIndex = idx + 1;
-      });
-      setLessons(newLessons);
+    if (index === lessons.length - 1) return;
+    const list = [...lessons];
+    [list[index], list[index + 1]] = [list[index + 1], list[index]];
+    list.forEach((l, i) => (l.orderIndex = i + 1));
+    setLessons(list);
+  };
+
+  const onSubmit = async (data: CourseFormData) => {
+    try {
+      // 1) создаём курс
+      const newCourse = await createCourseMutation.mutateAsync(data);
+
+      // 2) создаём уроки
+      for (const lesson of lessons) {
+        const { tempId, ...lessonData } = lesson;
+        await createLessonMutation.mutateAsync({
+          courseId: newCourse.id,
+          data: lessonData,
+        });
+      }
+
+      // Очистка формы
+      reset();
+      setLessons([]);
+      setExpandedLessonId(null);
+      setShowLessonsForm(false);
+
+      onClose();
+    } catch (error) {
+      console.error('Ошибка при создании курса:', error);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? 'Редактировать курс' : 'Создать новый курс'} size="lg">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold mb-2">Название курса</label>
-          <Input
-            placeholder="Например: Базовый шведский"
-            error={errors.title?.message}
-            {...register('title')}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold mb-2">Описание</label>
-          <textarea
-            placeholder="Подробное описание курса..."
-            className="w-full px-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-            style={{borderColor: 'var(--color-border)'}}
-            rows={4}
-            {...register('description')}
-          />
-          {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Создать новый курс"
+      size="lg"
+    >
+      <div className="bg-blue-50 p-6 rounded-lg">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Название */}
           <div>
-            <label className="block text-sm font-semibold mb-2">Уровень сложности</label>
-            <select
-              className="w-full px-4 py-2 border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
-              style={{borderColor: 'var(--color-border)'}}
-              {...register('level')}
-            >
-              <option value="Beginner">Начинающий</option>
-              <option value="Intermediate">Средний</option>
-              <option value="Advanced">Продвинутый</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold mb-2">Длительность (часы)</label>
+            <label className="block text-sm font-semibold mb-2">Название курса</label>
             <Input
-              type="number"
-              placeholder="20"
-              error={errors.durationHours?.message}
-              {...register('durationHours', { valueAsNumber: true })}
+              placeholder="Например: Базовый шведский"
+              error={errors.title?.message}
+              {...register('title')}
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-semibold mb-2">Цена ($)</label>
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="49.99"
-            error={errors.price?.message}
-            {...register('price', { valueAsNumber: true })}
-          />
-        </div>
-
-        {/* Lessons Section */}
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              type="button"
-              onClick={() => setShowLessonsForm(!showLessonsForm)}
-              className="flex items-center gap-2 font-semibold text-primary-600 hover:text-primary-700"
-            >
-              {showLessonsForm ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronUp className="w-4 h-4" />
-              )}
-              Уроки ({lessons.length})
-            </button>
-            {showLessonsForm && (
-              <Button
-                type="button"
-                onClick={addLesson}
-                variant="ghost"
-                size="sm"
-                className="text-primary-600"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Добавить урок
-              </Button>
+          {/* Описание */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">Описание</label>
+            <textarea
+              placeholder="Подробное описание курса..."
+              rows={4}
+              className="w-full px-4 py-2 border rounded-lg bg-white"
+              {...register('description')}
+            />
+            {errors.description && (
+              <p className="text-red-600 text-sm mt-1">{errors.description.message}</p>
             )}
           </div>
 
-          {showLessonsForm && (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {lessons.length === 0 ? (
-                <p className="text-sm text-neutral-600 text-center py-4">
-                  Нет добавленных уроков. Нажмите кнопку выше чтобы добавить урок.
-                </p>
-              ) : (
-                lessons.map((lesson, index) => (
-                  <div
-                    key={lesson.tempId}
-                    className="border rounded-lg overflow-hidden"
-                    style={{ borderColor: 'var(--color-border)' }}
-                  >
+          {/* Уровень + длительность */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Уровень</label>
+              <select
+                className="w-full px-4 py-2 border rounded-lg bg-white"
+                {...register('level')}
+              >
+                <option value="Beginner">Начинающий</option>
+                <option value="Intermediate">Средний</option>
+                <option value="Advanced">Продвинутый</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">Длительность (часы)</label>
+              <Input
+                type="number"
+                placeholder="20"
+                {...register('durationHours', { valueAsNumber: true })}
+                error={errors.durationHours?.message}
+              />
+            </div>
+          </div>
+
+          {/* Цена */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">Цена ($)</label>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="49.99"
+              {...register('price', { valueAsNumber: true })}
+              error={errors.price?.message}
+            />
+          </div>
+
+          {/* Уроки */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                type="button"
+                onClick={() => setShowLessonsForm(!showLessonsForm)}
+                className="flex items-center gap-2 font-semibold text-blue-600"
+              >
+                {showLessonsForm ? <ChevronDown /> : <ChevronUp />}
+                Уроки ({lessons.length})
+              </button>
+
+              {showLessonsForm && (
+                <Button
+                  type="button"
+                  onClick={addLesson}
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-600"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Добавить урок
+                </Button>
+              )}
+            </div>
+
+            {showLessonsForm && (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {lessons.map((lesson, index) => (
+                  <div key={lesson.tempId} className="border rounded-lg">
                     <button
                       type="button"
                       onClick={() =>
                         setExpandedLessonId(
-                          expandedLessonId === lesson.tempId ? null : (lesson.tempId || null)
+                          expandedLessonId === lesson.tempId ? null : lesson.tempId
                         )
                       }
-                      className="w-full px-4 py-3 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                      className="w-full px-4 py-3 flex justify-between hover:bg-gray-100"
                     >
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-sm font-semibold text-primary-600">
-                          Урок {lesson.orderIndex}
-                        </span>
-                        <span className="text-sm text-neutral-600 truncate">
-                          {lesson.title || 'Без названия'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {expandedLessonId === lesson.tempId ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
-                        )}
-                      </div>
+                      <span className="font-semibold">Урок {lesson.orderIndex}</span>
+                      {expandedLessonId === lesson.tempId ? <ChevronUp /> : <ChevronDown />}
                     </button>
 
                     {expandedLessonId === lesson.tempId && (
-                      <div className="border-t px-4 py-3 space-y-3" style={{ borderTopColor: 'var(--color-border)' }}>
-                        <div>
-                          <label className="block text-xs font-semibold mb-1">Название урока</label>
-                          <Input
-                            type="text"
-                            placeholder="Название урока"
-                            value={lesson.title}
-                            onChange={(e) =>
-                              updateLesson(lesson.tempId, { title: e.target.value })
-                            }
-                          />
-                        </div>
+                      <div className="p-4 space-y-3 border-t">
+                        <Input
+                          placeholder="Название урока"
+                          value={lesson.title}
+                          onChange={(e) =>
+                            updateLesson(lesson.tempId, { title: e.target.value })
+                          }
+                        />
 
-                        <div>
-                          <label className="block text-xs font-semibold mb-1">Содержание</label>
-                          <textarea
-                            placeholder="Содержание урока..."
-                            className="w-full px-3 py-2 border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-                            style={{ borderColor: 'var(--color-border)' }}
-                            rows={3}
-                            value={lesson.content || ''}
-                            onChange={(e) =>
-                              updateLesson(lesson.tempId, { content: e.target.value })
-                            }
-                          />
-                        </div>
+                        <textarea
+                          placeholder="Содержание урока"
+                          rows={3}
+                          className="w-full px-3 py-2 border rounded-lg"
+                          value={lesson.content}
+                          onChange={(e) =>
+                            updateLesson(lesson.tempId, { content: e.target.value })
+                          }
+                        />
 
-                        <div className="flex items-center gap-2 justify-end pt-2">
+                        <div className="flex justify-end gap-2">
                           {index > 0 && (
                             <Button
                               type="button"
-                              onClick={() => moveLessonUp(index)}
                               variant="ghost"
                               size="sm"
+                              onClick={() => moveLessonUp(index)}
                             >
-                              <ChevronUp className="w-4 h-4" />
+                              <ChevronUp />
                             </Button>
                           )}
                           {index < lessons.length - 1 && (
                             <Button
                               type="button"
-                              onClick={() => moveLessonDown(index)}
                               variant="ghost"
                               size="sm"
+                              onClick={() => moveLessonDown(index)}
                             >
-                              <ChevronDown className="w-4 h-4" />
+                              <ChevronDown />
                             </Button>
                           )}
                           <Button
                             type="button"
-                            onClick={() => removeLesson(lesson.tempId)}
                             variant="ghost"
                             size="sm"
                             className="text-red-600"
+                            onClick={() => removeLesson(lesson.tempId)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 />
                           </Button>
                         </div>
                       </div>
                     )}
                   </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {createMutation.error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">Ошибка при сохранении курса</p>
-          </div>
-        )}
-
-        <div className="flex gap-3 justify-end pt-4">
-          <Button onClick={onClose} variant="outline" disabled={isLoading}>
-            Отмена
-          </Button>
-          <Button type="submit" className="bg-primary-600 hover:bg-primary-700" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader className="w-4 h-4 mr-2 animate-spin" />
-                Сохранение...
-              </>
-            ) : isEditing ? (
-              'Обновить курс'
-            ) : (
-              'Создать курс'
+                ))}
+              </div>
             )}
-          </Button>
-        </div>
-      </form>
+          </div>
+
+          {/* Кнопки */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={onClose}>
+              Отмена
+            </Button>
+
+            <Button
+  type="submit"
+  disabled={createCourseMutation.isPending}
+  className="text-blue-600 bg-blue-50 hover:bg-blue-100"
+>
+  {createCourseMutation.isPending ? (
+    <>
+      <Loader className="w-4 h-4 mr-2 animate-spin text-blue-600" />
+      Создание...
+    </>
+  ) : (
+    'Создать курс'
+  )}
+</Button>
+          </div>
+        </form>
+      </div>
     </Modal>
   );
 };

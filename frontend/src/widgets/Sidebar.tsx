@@ -1,116 +1,86 @@
-import { Link, useLocation } from 'react-router-dom'
-import { BookOpen, LayoutDashboard, BookCopy, Users, Download } from 'lucide-react'
-import { useAuth } from '@/features/auth'
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, BookCopy, Users, Download } from 'lucide-react';
+import { useAuth } from '@/features/auth';
 
 export const Sidebar = () => {
-    const { user } = useAuth()
-    const location = useLocation()
+  const { user } = useAuth();
+  const location = useLocation();
 
-    const isActive = (path: string) => {
-        if (path === '/dashboard' && location.pathname === '/dashboard') return true
-        if (path !== '/dashboard' && location.pathname.startsWith(path)) return true
-        return false
-    }
+  const isActive = (path: string) => {
+    if (path === '/dashboard' && location.pathname === '/dashboard') return true;
+    if (path !== '/dashboard' && location.pathname.startsWith(path)) return true;
+    return false;
+  };
 
-    return (
-        <>
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 px-6 pt-6 pb-8">
-                <div className="rounded-lg p-2" style={{backgroundImage: 'linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-accent-400) 50%, var(--color-secondary-500) 100%)'}}>
-                    <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold" style={{color: 'var(--color-neutral-900)'}}>School Swedish</span>
+  const linkClasses = (path: string) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-colors ${
+      isActive(path)
+        ? 'bg-blue-100 text-blue-700'
+        : 'text-gray-600 hover:bg-gray-100'
+    }`;
+
+  return (
+    <div className="flex flex-col h-full">
+      
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-2">
+        <Link to="/dashboard" className={linkClasses('/dashboard')}>
+          <LayoutDashboard className="w-5 h-5" />
+          <span>Главная</span>
+        </Link>
+
+        {/* Студент */}
+        {user?.role === 'Student' && (
+          <>
+            <Link to="/courses" className={linkClasses('/courses')}>
+              <BookCopy className="w-5 h-5" />
+              <span>Каталог курсов</span>
             </Link>
+            <Link to="/dashboard/my-courses" className={linkClasses('/dashboard/my-courses')}>
+              <BookCopy className="w-5 h-5" />
+              <span>Мои курсы</span>
+            </Link>
+          </>
+        )}
 
-            {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-2">
-                <Link
-                    to="/dashboard"
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-colors"
-                    style={isActive('/dashboard') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                >
-                    <LayoutDashboard className="w-5 h-5" />
-                    <span>Главная</span>
-                </Link>
-                {user?.role === 'Student' && (
-                    <Link
-                        to="/courses"
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                        style={isActive('/courses') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                    >
-                        <BookOpen className="w-5 h-5" />
-                        <span>Каталог курсов</span>
-                    </Link>
-                )}
-                {user?.role === 'Student' && (
-                    <Link
-                        to="/dashboard/my-courses"
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                        style={isActive('/dashboard/my-courses') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                    >
-                        <BookCopy className="w-5 h-5" />
-                        <span>Мои курсы</span>
-                    </Link>
-                )}
-                
+        {/* Учитель и Админ — одна страница управления курсами */}
+        {(user?.role === 'Teacher' || user?.role === 'Admin') && (
+          <Link to="/dashboard/courses" className={linkClasses('/dashboard/courses')}>
+            <BookCopy className="w-5 h-5" />
+            <span>Управление курсами</span>
+          </Link>
+        )}
 
-                {/* Role-based menu items */}
-                {user?.role === 'Teacher' && (
-                    <Link
-                        to="/dashboard/teacher"
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                        style={isActive('/dashboard/teacher') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                    >
-                        <BookCopy className="w-5 h-5" />
-                        <span>Управление курсами</span>
-                    </Link>
-                )}
+        {/* Админ — дополнительные страницы */}
+        {user?.role === 'Admin' && (
+          <>
+            <Link to="/dashboard/admin" className={linkClasses('/dashboard/admin')}>
+              <Users className="w-5 h-5" />
+              <span>Управление пользователями</span>
+            </Link>
+            <Link to="/import-export" className={linkClasses('/import-export')}>
+              <Download className="w-5 h-5" />
+              <span>Импорт/Экспорт</span>
+            </Link>
+          </>
+        )}
+      </nav>
 
-                {user?.role === 'Admin' && (
-                    <>
-                        <Link
-                            to="/courses"
-                            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                            style={isActive('/courses') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                        >
-                            <BookOpen className="w-5 h-5" />
-                            <span>Каталог курсов</span>
-                        </Link>
-                        <Link
-                            to="/dashboard/admin"
-                            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                            style={isActive('/dashboard/admin') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                        >
-                            <Users className="w-5 h-5" />
-                            <span>Управление пользователями</span>
-                        </Link>
-                        <Link
-                            to="/import-export"
-                            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-[var(--color-neutral-100)]"
-                            style={isActive('/import-export') ? {backgroundColor: 'var(--color-primary-100)', color: 'var(--color-primary-700)'} : {color: 'var(--color-neutral-600)'}}
-                        >
-                            <Download className="w-5 h-5" />
-                            <span>Импорт/Экспорт</span>
-                        </Link>
-                    </>
-                )}
-            </nav>
-
-            {/* User Info & Logout */}
-            <div className="px-4 py-4 border-t" style={{borderColor: 'var(--color-neutral-200)'}}>
-                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{backgroundColor: 'var(--color-neutral-100)'}}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm" style={{backgroundImage: 'linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-accent-400) 50%, var(--color-secondary-500) 100%)'}}>
-                        {user?.firstName?.[0]}
-                        {user?.lastName?.[0]}
-                    </div>
-                    <div>
-                        <p className="font-semibold text-sm" style={{color: 'var(--color-neutral-900)'}}>
-                            {user?.firstName} {user?.lastName}
-                        </p>
-                        <p className="text-xs" style={{color: 'var(--color-neutral-600)'}}>{user?.role}</p>
-                    </div>
-                </div>
-            </div>
-        </>
-    )
-}
+      {/* User Info */}
+      <div className="px-4 py-4 border-t border-gray-200">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-100">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br from-blue-500 via-purple-400 to-pink-500">
+            {user?.firstName?.[0]}
+            {user?.lastName?.[0]}
+          </div>
+          <div>
+            <p className="font-semibold text-sm text-gray-900">
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p className="text-xs text-gray-600">{user?.role}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRegister } from '@/features/auth';
-import { Button, Input, Alert } from '@/shared/ui';
+import {  Input, Alert } from '@/shared/ui';
 import { Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 
@@ -25,7 +25,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterForm = () => {
-  const { mutate: register, isPending, error } = useRegister();
+  const { mutate: register, error } = useRegister();
   const {
     register: registerField,
     handleSubmit,
@@ -33,16 +33,12 @@ export const RegisterForm = () => {
     watch,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: 'Student',
-    },
+    defaultValues: { role: 'Student' },
   });
 
   const selectedRole = watch('role');
 
-  const onSubmit = (data: RegisterFormData) => {
-    register(data);
-  };
+  const onSubmit = (data: RegisterFormData) => register(data);
 
   const roles = [
     { value: 'Student', label: 'Студент', description: 'Обучаться на курсах' },
@@ -50,18 +46,23 @@ export const RegisterForm = () => {
   ];
 
   return (
-    <div className="w-full">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-600 via-accent-500 to-secondary-600 bg-clip-text text-transparent mb-2">Регистрация</h2>
-      <p className="text-foreground/70 mb-8">Создайте аккаунт для начала обучения</p>
+    <div className="w-full max-w-lg mx-auto bg-white p-10 rounded-2xl shadow-xl">
+      {/* Заголовок */}
+      <h2 className="text-4xl font-bold text-gray-900 mb-2 text-center">Регистрация</h2>
+      <p className="text-gray-600 mb-8 text-center text-lg">
+        Создайте аккаунт, чтобы начать обучение
+      </p>
 
+      {/* Ошибка */}
       {error && (
         <Alert type="error" className="mb-6">
           {(error as any).response?.data?.message || 'Ошибка при регистрации'}
         </Alert>
       )}
 
+      {/* Форма */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Имя"
             placeholder="Иван"
@@ -77,9 +78,9 @@ export const RegisterForm = () => {
         </div>
 
         <Input
-          label="Email адрес"
+          label="Email"
           type="email"
-          placeholder="your@email.com"
+          placeholder="you@example.com"
           error={errors.email?.message}
           {...registerField('email')}
         />
@@ -92,26 +93,18 @@ export const RegisterForm = () => {
           {...registerField('password')}
         />
 
+        {/* Роль пользователя */}
         <div>
-          <label className="block text-sm font-semibold text-foreground mb-4">Выберите вашу роль</label>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <label className="block text-gray-700 font-semibold mb-3">Выберите вашу роль</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {roles.map((role) => (
               <label
                 key={role.value}
-                className={`p-4 rounded-xl border-2 transition-all text-left cursor-pointer ${
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   selectedRole === role.value
-                    ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-accent-50'
-                    : 'border-border hover:border-primary-300'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50 text-gray-800'
                 }`}
-                style={
-                  selectedRole !== role.value
-                    ? {
-                        backgroundColor: 'var(--bg-primary)',
-                        color: 'var(--text-primary)',
-                        borderColor: 'var(--color-border)',
-                      }
-                    : {}
-                }
               >
                 <input
                   type="radio"
@@ -119,36 +112,35 @@ export const RegisterForm = () => {
                   {...registerField('role')}
                   className="sr-only"
                 />
-                <p className={`font-semibold ${selectedRole === role.value ? 'bg-gradient-to-r from-primary-600 to-accent-500 bg-clip-text text-transparent' : 'text-foreground'}`}>
-                  {role.label}
-                </p>
-                <p className={`text-sm mt-1 ${selectedRole === role.value ? 'text-primary-600' : 'text-foreground/60'}`}>
-                  {role.description}
-                </p>
+                <p className="font-semibold">{role.label}</p>
+                <p className="text-sm mt-1 text-gray-500">{role.description}</p>
               </label>
             ))}
           </div>
         </div>
 
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full py-3 text-lg gap-2"
-          loading={isPending}
-        >
-          <UserPlus className="w-5 h-5" />
-          <span>Создать аккаунт</span>
-        </Button>
+       <button
+  type="submit"
+  className="w-full py-4 text-blue-600 bg-blue-600 hover:bg-blue-700 font-semibold text-lg rounded-xl text-center flex justify-center items-center gap-2"
+>
+  <UserPlus className="w-6 h-6" />
+  Создать аккаунт
+</button>
+
+
+
       </form>
 
-      <div className="mt-8 pt-8 border-t border-border text-center">
-        <p className="text-foreground/70 mb-3">
-          Уже есть аккаунт?{' '}
-          <Link to="/auth/login" className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent font-semibold hover:opacity-80">
-            Войдите
-          </Link>
-        </p>
-      </div>
+      {/* Ссылка на вход */}
+      <p className="mt-8 text-center text-gray-600">
+        Уже есть аккаунт?{' '}
+        <Link
+          to="/auth/login"
+          className="text-blue-600 font-semibold hover:underline"
+        >
+          Войти
+        </Link>
+      </p>
     </div>
   );
 };

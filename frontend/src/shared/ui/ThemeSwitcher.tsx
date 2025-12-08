@@ -1,4 +1,3 @@
-import { Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/shared/lib';
 
@@ -35,11 +34,7 @@ export const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} theme`}
       title={`Switch to ${isDark ? 'light' : 'dark'} theme`}
     >
-      {isDark ? (
-        <Sun className="w-5 h-5 text-yellow-500" />
-      ) : (
-        <Moon className="w-5 h-5 text-neutral-600" />
-      )}
+      
     </button>
   );
 };

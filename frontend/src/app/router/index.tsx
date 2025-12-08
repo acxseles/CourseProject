@@ -15,7 +15,6 @@ import { RegisterPage } from '@/pages/auth/register';
 // Pages - Dashboard & Profile
 import { DashboardPage } from '@/pages/dashboard';
 
-
 // Pages - Courses
 import { CourseCatalogPage } from '@/pages/courses/catalog';
 import { CourseDetailsPage } from '@/pages/courses/details';
@@ -25,8 +24,8 @@ import LessonDetailPage from '@/pages/courses/lessons/detail';
 // Pages - Student Dashboard
 import { StudentDashboardPage } from '@/pages/student-dashboard';
 
-// Pages - Teacher Dashboard
-import { TeacherDashboardPage } from '@/pages/teacher-dashboard';
+// Pages - Combined Teacher/Admin Courses
+import { DashboardCoursesPage } from '@/pages/DashboardCoursesPage';
 
 // Pages - Admin Panel
 import { AdminPanelPage } from '@/pages/admin-panel';
@@ -34,20 +33,22 @@ import { AdminPanelPage } from '@/pages/admin-panel';
 // Pages - Import/Export
 import { ImportExportPage } from '@/pages/import-export';
 
+// Generic Error Page
+import { ErrorPage } from '@/pages/ErrorPage';
+
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <LandingLayout />,
+    errorElement: <ErrorPage />,
     children: [
-      {
-        index: true,
-        element: <LandingPage />,
-      },
+      { index: true, element: <LandingPage /> },
     ],
   },
   {
     path: '/courses',
     element: <MainLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         index: true,
@@ -86,6 +87,7 @@ export const router = createBrowserRouter([
   {
     path: '/import-export',
     element: <MainLayout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         index: true,
@@ -104,11 +106,9 @@ export const router = createBrowserRouter([
         <DashboardLayout />
       </ProtectedRoute>
     ),
+    errorElement: <ErrorPage />,
     children: [
-      {
-        index: true,
-        element: <DashboardPage />,
-      },
+      { index: true, element: <DashboardPage /> },
       {
         path: 'my-courses',
         element: (
@@ -118,27 +118,30 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'teacher',
-        element: <TeacherDashboardPage />,
-      },
+  path: '/dashboard/courses',
+  element: (
+    <ProtectedRoute requiredRoles={['Teacher', 'Admin']}>
+      <DashboardCoursesPage />
+    </ProtectedRoute>
+  ),
+},
       {
         path: 'admin',
-        element: <AdminPanelPage />,
+        element: (
+          <ProtectedRoute requiredRoles={['Admin']}>
+            <AdminPanelPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
   {
     path: '/auth',
     element: <AuthLayout />,
+    errorElement: <ErrorPage />,
     children: [
-      {
-        path: 'login',
-        element: <LoginPage />,
-      },
-      {
-        path: 'register',
-        element: <RegisterPage />,
-      },
+      { path: 'login', element: <LoginPage /> },
+      { path: 'register', element: <RegisterPage /> },
     ],
   },
 ]);

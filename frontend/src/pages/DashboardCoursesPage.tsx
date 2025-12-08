@@ -2,46 +2,59 @@ import { useState } from 'react';
 import { useGetCourses, useDeleteCourse } from '@/features/courses';
 import { useAuth } from '@/features/auth';
 import { Card, CardContent, Button, Input } from '@/shared/ui';
-import { Loader, AlertCircle, Trash2, Edit2, Plus } from 'lucide-react';
+import { Loader, AlertCircle, Trash2, Plus } from 'lucide-react';
 import { CourseFormModal } from '@/components/CourseFormModal';
+import { useQueryClient } from '@tanstack/react-query';
 
-export const TeacherDashboardPage = () => {
+export const DashboardCoursesPage = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<any>(undefined);
   const pageSize = 10;
+
+  const isTeacher = user?.role === 'Teacher';
+  const isAdmin = user?.role === 'Admin';
 
   const { data, isLoading, error } = useGetCourses(
     { page, pageSize, search: search || undefined },
-    { scope: 'teacher' }
+    { scope: isTeacher ? 'teacher' : 'all' }
   );
 
   const filteredData = data
     ? {
         ...data,
-        items: data.items.filter((course) => course.teacherId === user?.id),
-        totalCount: data.items.filter((course) => course.teacherId === user?.id).length,
+        items: isTeacher
+          ? data.items.filter((course) => course.teacherId === user?.id)
+          : data.items,
+        totalCount: isTeacher
+          ? data.items.filter((course) => course.teacherId === user?.id).length
+          : data.items.length,
       }
     : null;
 
-  const deleteMutation = useDeleteCourse();
   const totalPages = filteredData ? Math.ceil(filteredData.totalCount / pageSize) : 0;
+  const deleteMutation = useDeleteCourse();
 
   const handleDelete = (courseId: number) => {
     if (confirm('Вы уверены, что хотите удалить этот курс?')) {
-      deleteMutation.mutate(courseId);
+      deleteMutation.mutate(courseId, {
+        onSuccess: () => {
+          queryClient.setQueryData(['courses'], (oldData: any) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              items: oldData.items.filter((course: any) => course.id !== courseId),
+              totalCount: oldData.totalCount - 1,
+            };
+          });
+        },
+      });
     }
   };
 
   const handleCreateClick = () => {
-    setSelectedCourse(undefined);
-    setIsModalOpen(true);
-  };
-
-  const handleEditClick = (course: any) => {
-    setSelectedCourse(course);
     setIsModalOpen(true);
   };
 
@@ -49,17 +62,26 @@ export const TeacherDashboardPage = () => {
     <div className="min-h-screen bg-blue-50 py-10 px-4 sm:px-8 space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Мои курсы</h1>
-        <p className="text-lg text-gray-700">Управляйте вашими курсами и отслеживайте студентов</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          {isTeacher ? 'Мои курсы' : 'Курсы'}
+        </h1>
+        <p className="text-lg text-gray-700">
+          {isTeacher
+            ? 'Управляйте вашими курсами и отслеживайте студентов'
+            : 'Создавайте и удаляйте курсы'}
+        </p>
       </div>
 
       {/* Create Course Button */}
-      <div>
-        <Button onClick={handleCreateClick} className="text-blue-600 bg-blue-100 hover:bg-blue-200">
+      {(isTeacher || isAdmin) && (
+        <Button
+          onClick={handleCreateClick}
+          className="text-blue-600 bg-blue-100 hover:bg-blue-200"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Создать новый курс
         </Button>
-      </div>
+      )}
 
       {/* Modal */}
       <CourseFormModal
@@ -95,7 +117,7 @@ export const TeacherDashboardPage = () => {
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-red-900 mb-1">Ошибка загрузки</h3>
-                <p className="text-sm text-red-800">Не удалось загрузить ваши курсы. Попробуйте позже.</p>
+                <p className="text-sm text-red-800">Не удалось загрузить курсы. Попробуйте позже.</p>
               </div>
             </div>
           </CardContent>
@@ -129,30 +151,23 @@ export const TeacherDashboardPage = () => {
                         <span className="text-gray-500">Цена:</span>
                         <p className="font-semibold">${course.price}</p>
                       </div>
-                      
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 flex-shrink-0 mt-2 md:mt-0">
-                    <Button
-                      onClick={() => handleEditClick(course)}
-                      variant="outline"
-                      size="sm"
-                      className="border-gray-300 text-blue-600 hover:bg-gray-50"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(course.id)}
-                      disabled={deleteMutation.isPending}
-                      variant="outline"
-                      size="sm"
-                      className="border-red-200 text-blue-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {(isTeacher || isAdmin) && (
+                    <div className="flex gap-2 flex-shrink-0 mt-2 md:mt-0">
+                      <Button
+                        onClick={() => handleDelete(course.id)}
+                        disabled={deleteMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                        className="border-red-200 text-blue-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -161,7 +176,12 @@ export const TeacherDashboardPage = () => {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-6">
-              <Button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} variant="outline" className="text-blue-600">
+              <Button
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                variant="outline"
+                className="text-blue-600"
+              >
                 Предыдущая
               </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -174,7 +194,12 @@ export const TeacherDashboardPage = () => {
                   {p}
                 </Button>
               ))}
-              <Button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} variant="outline" className="text-blue-600">
+              <Button
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
+                variant="outline"
+                className="text-blue-600"
+              >
                 Следующая
               </Button>
             </div>
@@ -187,12 +212,21 @@ export const TeacherDashboardPage = () => {
         <Card>
           <CardContent className="pt-12 pb-12">
             <div className="text-center">
-              <h3 className="text-xl font-semibold mb-2">Вы еще не создали ни одного курса</h3>
-              <p className="text-gray-600 mb-6">Нажмите кнопку выше, чтобы создать ваш первый курс</p>
-              <Button onClick={handleCreateClick} className="text-blue-600 bg-blue-100 hover:bg-blue-200">
-                <Plus className="w-4 h-4 mr-2" />
-                Создать курс
-              </Button>
+              <h3 className="text-xl font-semibold mb-2">
+                {isTeacher ? 'Вы еще не создали ни одного курса' : 'Курсы отсутствуют'}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Нажмите кнопку выше, чтобы создать {isTeacher ? 'ваш первый курс' : 'курс'}
+              </p>
+              {(isTeacher || isAdmin) && (
+                <Button
+                  onClick={handleCreateClick}
+                  className="text-blue-600 bg-blue-100 hover:bg-blue-200"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Создать курс
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -17,10 +17,7 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
   const submitMutation = useSubmitTest({
     onSuccess: (data) => {
       setHasSubmitted(true);
-      // Результаты приходят в ответе от submitTest
-      if (data) {
-        setTestResults(data);
-      }
+      if (data) setTestResults(data);
     },
   });
 
@@ -36,7 +33,6 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
     );
   }
 
-  // Показываем ошибку только если это не ошибка "уже сдан" и у нас нет результатов
   if (error && !hasSubmitted && !testResults && error.message && !error.message.includes('уже сдавали')) {
     return (
       <Card className="border-red-200 bg-red-50">
@@ -83,7 +79,6 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          {/* Main Score */}
           <div className={`p-6 rounded-lg border-2 text-center ${isPass ? 'bg-green-100 border-green-400' : 'bg-yellow-100 border-yellow-400'}`}>
             <p className={`text-sm font-semibold mb-2 ${isPass ? 'text-green-700' : 'text-yellow-700'}`}>
               {isPass ? 'Отлично!' : 'Хороший результат'}
@@ -93,12 +88,9 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
             </p>
           </div>
 
-          {/* Detailed Stats */}
           <div className="grid grid-cols-3 gap-4">
             <div className="p-4 bg-white rounded-lg border border-green-200 text-center">
-              <p className="text-xs font-semibold text-foreground/60 uppercase mb-2">
-                Правильных ответов
-              </p>
+              <p className="text-xs font-semibold text-foreground/60 uppercase mb-2">Правильных ответов</p>
               <div className="flex items-baseline justify-center gap-1">
                 <p className="text-3xl font-bold text-green-600">{testResults.correctAnswers}</p>
                 <p className="text-sm text-foreground/60">из {testResults.totalQuestions}</p>
@@ -106,21 +98,16 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
             </div>
 
             <div className="p-4 bg-white rounded-lg border border-green-200 text-center">
-              <p className="text-xs font-semibold text-foreground/60 uppercase mb-2">
-                Всего вопросов
-              </p>
+              <p className="text-xs font-semibold text-foreground/60 uppercase mb-2">Всего вопросов</p>
               <p className="text-3xl font-bold text-primary-600">{testResults.totalQuestions}</p>
             </div>
 
             <div className="p-4 bg-white rounded-lg border border-green-200 text-center">
-              <p className="text-xs font-semibold text-foreground/60 uppercase mb-2">
-                Макс. баллы
-              </p>
+              <p className="text-xs font-semibold text-foreground/60 uppercase mb-2">Макс. баллы</p>
               <p className="text-3xl font-bold text-accent-600">{testResults.maxScore}</p>
             </div>
           </div>
 
-          {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="font-medium text-foreground">Прогресс</span>
@@ -130,11 +117,10 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
               <div
                 className={`h-full rounded-full transition-all duration-500 ${isPass ? 'bg-green-600' : 'bg-yellow-500'}`}
                 style={{ width: `${percentage}%` }}
-              ></div>
+              />
             </div>
           </div>
 
-          {/* Summary Text */}
           <div className={`p-4 rounded-lg ${isPass ? 'bg-green-100 border border-green-300' : 'bg-yellow-100 border border-yellow-300'}`}>
             <p className={`text-sm ${isPass ? 'text-green-800' : 'text-yellow-800'}`}>
               {isPass
@@ -157,7 +143,6 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
 
   const handleSubmitTest = async () => {
     if (!test) return;
-
     const answers: TestAnswerDto[] = Object.entries(selectedAnswers).map(([questionId, answerText]) => ({
       questionId: parseInt(questionId),
       selectedAnswer: answerText,
@@ -169,9 +154,7 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
 
   const allQuestionsAnswered = test ? test.questions.every(q => selectedAnswers[q.id]) : false;
 
-  if (!test) {
-    return null;
-  }
+  if (!test) return null;
 
   return (
     <Card>
@@ -224,7 +207,7 @@ export const TestComponent = ({ lessonId }: TestComponentProps) => {
           <Button
             onClick={handleSubmitTest}
             disabled={!allQuestionsAnswered || submitMutation.isPending}
-            className="flex-1 bg-primary-600 hover:bg-primary-700"
+            className="flex-1 text-blue-600 bg-primary-600 hover:bg-primary-700"
           >
             {submitMutation.isPending ? (
               <>

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
-import { BookOpen, Github, Linkedin, Twitter, ArrowRight } from 'lucide-react'
+import {  Github, Linkedin, Twitter, ArrowRight } from 'lucide-react'
 
 export const Footer = () => {
-    const currentYear = new Date().getFullYear()
+   
 
     const footerSections = [
         {
@@ -73,7 +73,7 @@ export const Footer = () => {
                                         'linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-accent-400) 50%, var(--color-secondary-500) 100%)',
                                 }}
                             >
-                                <BookOpen className="w-5 h-5 text-white" />
+                                
                             </div>
                             <span
                                 className="font-black text-lg"
@@ -85,7 +85,7 @@ export const Footer = () => {
                                     backgroundClip: 'text',
                                 }}
                             >
-                                School Swedish
+                                Школа шведского языка
                             </span>
                         </Link>
                         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
@@ -135,7 +135,7 @@ export const Footer = () => {
                 {/* Bottom Section */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-xs text-muted-foreground text-center md:text-left">
-                        © {currentYear} School Swedish. Все права защищены.
+                        © School Swedish. Все права защищены.
                     </p>
                     <div className="flex items-center gap-4">
                         <a
