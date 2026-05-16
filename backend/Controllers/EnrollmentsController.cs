@@ -223,6 +223,51 @@ public class EnrollmentsController : ControllerBase
             _logger.LogError(ex, "Ошибка при отмене записи на курс {EnrollmentId}", id);
             return StatusCode(500, new { message = "Ошибка при отмене записи" });
         }
+
+        [HttpPost("enroll-with-payment")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> EnrollWithPayment([FromBody] EnrollmentRequest request)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var course = await _context.Courses.FindAsync(request.CourseId);
+
+            if (course == null)
+                return NotFound(new { message = "Курс не найден" });
+
+            // Создаём запись о зачислении со статусом "ожидание оплаты"
+            var enrollment = new Enrollment
+            {
+                StudentId = userId,
+                CourseId = request.CourseId,
+                EnrolledAt = DateTime.UtcNow,
+                Status = "PendingPayment",
+                Progress = 0
+            };
+
+            _context.Enrollments.Add(enrollment);
+            await _context.SaveChangesAsync();
+
+            // Формируем ссылку на оплату
+            var paymentUrl = $"https://yoomoney.ru/oplata/testoviie-magazin-5296?amount={course.Price}&orderId={enrollment.Id}";
+
+            return Ok(new { paymentUrl, enrollmentId = enrollment.Id });
+        }
+
+        [HttpPost("confirm-payment/{enrollmentId}")]
+        public async Task<IActionResult> ConfirmPayment(int enrollmentId, [FromBody] ConfirmPaymentRequest request)
+        {
+            var enrollment = await _context.Enrollments.FindAsync(enrollmentId);
+            if (enrollment == null)
+                return NotFound();
+
+            // Проверяем статус платежа через API ЮMoney
+            // (здесь нужна интеграция с API ЮMoney)
+
+            enrollment.Status = "Active";
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 }
   

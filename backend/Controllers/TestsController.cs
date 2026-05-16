@@ -99,14 +99,6 @@ namespace SchoolSwedishAPI.Controllers
                     return NotFound(new { message = "Тест не найден" });
                 }
 
-                // Проверяем дедлайн
-                //if (assignment.Deadline.HasValue && assignment.Deadline < DateTime.UtcNow)
-                //{
-                //    _logger.LogWarning("⏰ Срок сдачи теста истек для урока {LessonId}", lessonId);
-                //    return BadRequest(new { message = "Срок сдачи теста истек" });
-                //}
-
-                // Проверяем не сдавал ли уже студент этот тест (только для студентов)
                 var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
                 if (userRole == "Student")
                 {
@@ -131,7 +123,6 @@ namespace SchoolSwedishAPI.Controllers
                     Title = assignment.Title,
                     Description = assignment.Description,
                     MaxScore = assignment.MaxScore ?? 100,
-                    //Deadline = assignment.Deadline,
                     Questions = assignment.Questions
                         .OrderBy(q => q.Id)
                         .Select(q => new QuestionDto
@@ -145,7 +136,6 @@ namespace SchoolSwedishAPI.Controllers
                                 {
                                     Id = a.Id,
                                     Text = a.Text
-                                    // Не показываем IsCorrect студентам!
                                 }).ToList()
                         }).ToList()
                 };
@@ -180,17 +170,6 @@ namespace SchoolSwedishAPI.Controllers
                     return NotFound(new { message = "Урок не найден" });
                 }
 
-                // Проверяем не существует ли уже тест
-                var existingTest = await _context.Questions
-                    .AnyAsync(q => q.Assignment.LessonId == lessonId);
-
-                if (existingTest)
-                {
-                    _logger.LogWarning("❌ Тест уже существует для урока {LessonId}", lessonId);
-                    return BadRequest(new { message = "Тест уже существует для этого урока" });
-                }
-
-
                 // Создаем задание (тест)
                 var assignment = new Assignment
                 {
@@ -198,7 +177,6 @@ namespace SchoolSwedishAPI.Controllers
                     Title = createTestDto.Title,
                     Description = createTestDto.Description,
                     MaxScore = createTestDto.MaxScore,
-                    //Deadline = createTestDto.Deadline,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -252,6 +230,109 @@ namespace SchoolSwedishAPI.Controllers
             }
         }
 
+        // ОБНОВИТЬ ТЕСТ (добавлено)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<ActionResult> UpdateTest(int id, CreateTestDto updateDto)
+        {
+            try
+            {
+                if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
+                {
+                    return Unauthorized(new { message = "Пользователь не авторизован" });
+                }
+
+                _logger.LogInformation("👨‍🏫 Преподаватель {UserId} обновляет тест {TestId}", userId, id);
+
+                var assignment = await _context.Assignments
+                    .Include(a => a.Questions)
+                        .ThenInclude(q => q.Answers)
+                    .FirstOrDefaultAsync(a => a.Id == id);
+
+                if (assignment == null)
+                {
+                    return NotFound(new { message = "Тест не найден" });
+                }
+
+                // Обновляем основные поля
+                assignment.Title = updateDto.Title;
+                assignment.Description = updateDto.Description;
+                assignment.MaxScore = updateDto.MaxScore;
+
+                // Удаляем старые вопросы и ответы
+                _context.Questions.RemoveRange(assignment.Questions);
+                await _context.SaveChangesAsync();
+
+                // Добавляем новые вопросы
+                foreach (var questionDto in updateDto.Questions)
+                {
+                    var question = new Question
+                    {
+                        AssignmentId = assignment.Id,
+                        Text = questionDto.Text,
+                        QuestionType = questionDto.QuestionType,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Questions.Add(question);
+                    await _context.SaveChangesAsync();
+
+                    int orderIndex = 1;
+                    foreach (var answerDto in questionDto.Answers)
+                    {
+                        var answer = new Answer
+                        {
+                            QuestionId = question.Id,
+                            Text = answerDto.Text,
+                            IsCorrect = answerDto.IsCorrect,
+                            OrderIndex = orderIndex++
+                        };
+
+                        _context.Answers.Add(answer);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("✅ Тест обновлён: {Title}", assignment.Title);
+                return Ok(new { message = "Тест обновлён", assignmentId = assignment.Id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "💥 Ошибка при обновлении теста {TestId}", id);
+                return StatusCode(500, new { message = "Ошибка при обновлении теста" });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> DeleteTest(int id)
+        {
+            var test = await _context.Assignments
+                .Include(a => a.Questions)
+                    .ThenInclude(q => q.Answers)
+                .Include(a => a.Studentassignments)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (test == null)
+                return NotFound();
+
+            // Удаляем ответы на вопросы
+            foreach (var question in test.Questions)
+            {
+                _context.Answers.RemoveRange(question.Answers);
+            }
+            // Удаляем вопросы
+            _context.Questions.RemoveRange(test.Questions);
+            // Удаляем результаты студентов
+            _context.Studentassignments.RemoveRange(test.Studentassignments);
+            // Удаляем тест
+            _context.Assignments.Remove(test);
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
         // Сдать тест (студент)
         [HttpPost("{assignmentId}/submit")]
         [Authorize(Roles = "Student")]
@@ -276,7 +357,6 @@ namespace SchoolSwedishAPI.Controllers
                     return NotFound(new { message = "Тест не найден" });
                 }
 
-                // Проверяем не сдавал ли уже
                 var existingSubmission = await _context.Studentassignments
                     .FirstOrDefaultAsync(sa => sa.StudentId == studentId && sa.AssignmentId == assignmentId);
 
@@ -285,7 +365,6 @@ namespace SchoolSwedishAPI.Controllers
                     return BadRequest(new { message = "Вы уже сдавали этот тест" });
                 }
 
-                // Проверяем ответы
                 int correctAnswers = 0;
                 int totalQuestions = assignment.Questions.Count;
 
@@ -296,10 +375,8 @@ namespace SchoolSwedishAPI.Controllers
 
                     if (submittedAnswer != null)
                     {
-                        // Находим правильный ответ
                         var correctAnswer = question.Answers.FirstOrDefault(a => a.IsCorrect == true);
 
-                        // Сравниваем текст ответа
                         if (correctAnswer != null &&
                             submittedAnswer.SelectedAnswer.Trim().ToLower() == correctAnswer.Text.Trim().ToLower())
                         {
@@ -308,11 +385,9 @@ namespace SchoolSwedishAPI.Controllers
                     }
                 }
 
-                // Рассчитываем баллы
                 double scorePercentage = totalQuestions > 0 ? (correctAnswers * 100.0) / totalQuestions : 0;
                 int score = (int)Math.Round(scorePercentage);
 
-                // Сохраняем результат
                 var studentAssignment = new Studentassignment
                 {
                     StudentId = studentId,
@@ -348,6 +423,7 @@ namespace SchoolSwedishAPI.Controllers
         [HttpGet("{assignmentId}/results")]
         public async Task<ActionResult> GetTestResults(int assignmentId)
         {
+            // ... существующий код без изменений ...
             try
             {
                 if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
@@ -361,7 +437,6 @@ namespace SchoolSwedishAPI.Controllers
 
                 if (userRole == "Student")
                 {
-                    // Студент видит только свой результат
                     var result = await _context.Studentassignments
                         .Where(sa => sa.AssignmentId == assignmentId && sa.StudentId == userId)
                         .Select(sa => new
@@ -381,7 +456,6 @@ namespace SchoolSwedishAPI.Controllers
                 }
                 else if (userRole == "Teacher" || userRole == "Admin")
                 {
-                    // Преподаватель видит все результаты
                     var results = await _context.Studentassignments
                         .Include(sa => sa.Student)
                         .Where(sa => sa.AssignmentId == assignmentId)

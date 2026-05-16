@@ -5,7 +5,8 @@ using SchoolSwedishAPI.DTOs;
 using SchoolSwedishAPI.Models;
 using Serilog;
 using Microsoft.AspNetCore.Authorization;  
-using System.Security.Claims;  
+using System.Security.Claims;
+using MySql.Data.MySqlClient;
 
 namespace SchoolSwedishAPI.Controllers
 {
@@ -186,46 +187,61 @@ namespace SchoolSwedishAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin,Teacher")]  
+        [Authorize(Roles = "Admin,Teacher")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
-            try
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
+            var currentUserId = int.Parse(userIdString);
+            var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            _logger.LogInformation("Попытка удаления курса {CourseId} пользователем {UserId}", id, currentUserId);
+
+            var course = await _context.Courses
+                .Include(c => c.Lessons)
+                    .ThenInclude(l => l.Assignments)
+                        .ThenInclude(a => a.Questions)
+                            .ThenInclude(q => q.Answers)
+                .Include(c => c.Enrollments)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (course == null)
             {
-                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0";
-                var currentUserId = int.Parse(userIdString);
-                var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-                _logger.LogInformation("Попытка удаления курса {CourseId} пользователем {UserId}", id, currentUserId);
-
-                var course = await _context.Courses
-                    .Include(c => c.Teacher)
-                    .FirstOrDefaultAsync(c => c.Id == id);
-
-                if (course == null)
-                {
-                    _logger.LogWarning("Курс {CourseId} не найден", id);
-                    return NotFound(new { message = "Курс не найден" });
-                }
-
-                // ПРОВЕРКА: Только админ или создатель курса может удалить
-                if (currentUserRole != "Admin" && course.TeacherId != currentUserId)
-                {
-                    _logger.LogWarning("Пользователь {UserId} не имеет прав для удаления курса {CourseId}",
-                        currentUserId, id);
-                    return Forbid();
-                }
-
-                _context.Courses.Remove(course);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Курс {CourseId} удален пользователем {UserId}", id, currentUserId);
-                return Ok(new { message = "Курс успешно удален" });
+                _logger.LogWarning("Курс {CourseId} не найден", id);
+                return NotFound(new { message = "Курс не найден" });
             }
-            catch (Exception ex)
+
+            if (currentUserRole != "Admin" && course.TeacherId != currentUserId)
             {
-                _logger.LogError(ex, "Ошибка при удалении курса {CourseId}", id);
-                return StatusCode(500, new { message = "Ошибка при удалении курса" });
+                _logger.LogWarning("Пользователь {UserId} не имеет прав для удаления курса {CourseId}", currentUserId, id);
+                return Forbid();
             }
+
+            // Удаляем все связанные данные
+            foreach (var lesson in course.Lessons)
+            {
+                foreach (var assignment in lesson.Assignments)
+                {
+                    foreach (var question in assignment.Questions)
+                    {
+                        _context.Answers.RemoveRange(question.Answers);
+                    }
+                    _context.Questions.RemoveRange(assignment.Questions);
+
+                    var studentResults = await _context.Studentassignments
+                        .Where(sa => sa.AssignmentId == assignment.Id)
+                        .ToListAsync();
+                    _context.Studentassignments.RemoveRange(studentResults);
+                }
+                _context.Assignments.RemoveRange(lesson.Assignments);
+            }
+            _context.Lessons.RemoveRange(course.Lessons);
+            _context.Enrollments.RemoveRange(course.Enrollments);
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Курс {CourseId} удален пользователем {UserId}", id, currentUserId);
+            return Ok(new { message = "Курс успешно удален" });
         }
 
         // Получить конкретный урок
@@ -418,47 +434,42 @@ namespace SchoolSwedishAPI.Controllers
         }
 
         // Удалить урок
-        [HttpDelete("{courseId}/lessons/{lessonId}")]
-        [Authorize(Roles = "Admin,Teacher")]
-        public async Task<IActionResult> DeleteLesson(int courseId, int lessonId)
+        [HttpDelete("lessons/{id}")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> DeleteLesson(int id)
         {
-            try
+            var lesson = await _context.Lessons
+                .Include(l => l.Assignments)
+                    .ThenInclude(a => a.Questions)
+                        .ThenInclude(q => q.Answers)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (lesson == null)
+                return NotFound();
+
+            // Удаляем все связанные данные
+            foreach (var assignment in lesson.Assignments)
             {
-                _logger.LogInformation("🗑️ Удаление урока ID: {LessonId} курса ID: {CourseId}", lessonId, courseId);
-
-                var lesson = await _context.Lessons
-                    .FirstOrDefaultAsync(l => l.Id == lessonId && l.CourseId == courseId);
-
-                if (lesson == null)
+                // Удаляем ответы на вопросы
+                foreach (var question in assignment.Questions)
                 {
-                    _logger.LogWarning("❌ Урок не найден ID: {LessonId}", lessonId);
-                    return NotFound(new { message = "Урок не найден" });
+                    _context.Answers.RemoveRange(question.Answers);
                 }
-
-                // Проверка прав доступа: только учитель может удалять уроки своих курсов
-                var course = await _context.Courses.FindAsync(courseId);
-                var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
-                var currentUserId = int.Parse(userIdString);
-                var currentUserRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-
-                if (currentUserRole == "Teacher" && course?.TeacherId != currentUserId)
-                {
-                    _logger.LogWarning("❌ Учитель {UserId} не имеет прав для удаления уроков", currentUserId);
-                    return Forbid();
-                }
-
-                _context.Lessons.Remove(lesson);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("✅ Урок удален: ID: {LessonId}", lesson.Id);
-
-                return Ok(new { message = "Урок успешно удален" });
+                // Удаляем вопросы
+                _context.Questions.RemoveRange(assignment.Questions);
+                // Удаляем результаты студентов
+                var studentResults = await _context.Studentassignments
+                    .Where(sa => sa.AssignmentId == assignment.Id)
+                    .ToListAsync();
+                _context.Studentassignments.RemoveRange(studentResults);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "💥 Ошибка при удалении урока ID: {LessonId}", lessonId);
-                return StatusCode(500, new { message = "Ошибка при удалении урока" });
-            }
+            // Удаляем задания
+            _context.Assignments.RemoveRange(lesson.Assignments);
+            // Удаляем урок
+            _context.Lessons.Remove(lesson);
+
+            await _context.SaveChangesAsync();
+            return Ok();
         }
 
         [HttpPut("{id}")]
@@ -575,6 +586,58 @@ namespace SchoolSwedishAPI.Controllers
                 _logger.LogError(ex, "Ошибка при обновлении курса {CourseId}", id);
                 return StatusCode(500, new { message = "Ошибка при обновлении курса" });
             }
+        }
+
+        // Получить прогресс курса
+        [HttpGet("{id}/progress")]
+        [Authorize]
+        public async Task<IActionResult> GetCourseProgress(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == id);
+            if (totalLessons == 0)
+                return Ok(new { progress = 0, completedLessonIds = new List<int>() });
+
+            // Получаем ID пройденных уроков
+            var completedLessons = await _context.LessonProgress
+                .Where(lp => lp.StudentId == userId)
+                .Join(_context.Lessons.Where(l => l.CourseId == id),
+                      lp => lp.LessonId,
+                      l => l.Id,
+                      (lp, l) => l.Id)
+                .ToListAsync();
+
+            var progress = (int)((double)completedLessons.Count / totalLessons * 100);
+
+            return Ok(new { progress, completedLessonIds = completedLessons });
+        }
+
+        // Завершить урок
+        [HttpPost("lessons/{lessonId}/complete")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> CompleteLesson(int lessonId)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var existing = await _context.LessonProgress
+                .FirstOrDefaultAsync(lp => lp.StudentId == userId && lp.LessonId == lessonId);
+
+            if (existing != null)
+                return Ok(new { message = "Урок уже пройден" });
+
+            var progress = new LessonProgress
+            {
+                StudentId = userId,
+                LessonId = lessonId,
+                IsCompleted = true,
+                CompletedAt = DateTime.UtcNow
+            };
+
+            _context.LessonProgress.Add(progress);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Урок завершён!" });
         }
     }
 }

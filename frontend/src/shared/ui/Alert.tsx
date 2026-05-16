@@ -1,38 +1,19 @@
-import type { ReactNode } from 'react';
-import { AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react';
-import { cn } from '@/shared/lib';
-
 interface AlertProps {
-  type?: 'success' | 'error' | 'warning' | 'info';
-  children: ReactNode;
+  type: 'error' | 'success' | 'info';
+  children: React.ReactNode;
   className?: string;
 }
 
-export const Alert = ({ type = 'info', children, className }: AlertProps) => {
-  const styles = {
-    success: 'bg-green-50 text-green-700 border-l-4 border-green-500',
-    error: 'bg-red-50 text-red-700 border-l-4 border-red-500',
-    warning: 'bg-amber-50 text-amber-700 border-l-4 border-amber-500',
-    info: 'bg-primary-50 text-primary-700 border-l-4 border-primary-400',
-  };
-
-  const icons = {
-    success: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 shrink-0" />,
-    error: <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 shrink-0" />,
-    warning: <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500 shrink-0" />,
-    info: <Info className="w-5 h-5 sm:w-6 sm:h-6 text-primary-400 shrink-0" />,
+export const Alert = ({ type, children, className = '' }: AlertProps) => {
+  const colors = {
+    error: 'bg-red-50 border-red-200 text-red-700',
+    success: 'bg-green-50 border-green-200 text-green-700',
+    info: 'bg-blue-50 border-blue-200 text-blue-700',
   };
 
   return (
-    <div
-      className={cn(
-        'w-full flex gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border-0',
-        styles[type],
-        className
-      )}
-    >
-      <div className="shrink-0 mt-0.5">{icons[type]}</div>
-      <div className="flex-1 text-xs sm:text-sm font-medium">{children}</div>
+    <div className={`p-4 rounded-xl border ${colors[type]} ${className}`}>
+      {children}
     </div>
   );
 };

@@ -214,5 +214,146 @@ namespace SchoolSwedishAPI.Controllers
                 return StatusCode(500, new { message = "Ошибка при удалении студента" });
             }
         }
+
+        // Обновить пользователя (только для админа)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto updateDto)
+        {
+            try
+            {
+                _logger.LogInformation("Обновление пользователя ID: {UserId}", id);
+
+                var user = await _context.Users.FindAsync(id);
+                if (user == null)
+                {
+                    return NotFound(new { message = "Пользователь не найден" });
+                }
+
+                user.FirstName = updateDto.FirstName;
+                user.LastName = updateDto.LastName;
+                user.Email = updateDto.Email;
+                user.Role = updateDto.Role;
+                user.IsActive = updateDto.IsActive;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Пользователь {UserId} обновлён", id);
+
+                return Ok(new
+                {
+                    user.Id,
+                    user.Email,
+                    user.FirstName,
+                    user.LastName,
+                    user.Role,
+                    user.IsActive,
+                    user.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при обновлении пользователя ID: {UserId}", id);
+                return StatusCode(500, new { message = "Ошибка при обновлении пользователя" });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            try
+            {
+                _logger.LogInformation("Попытка удаления пользователя ID: {UserId}", id);
+
+                var user = await _context.Users
+                    .Include(u => u.Enrollments)
+                        .ThenInclude(e => e.Course)
+                    .Include(u => u.Studentassignments)
+                        .ThenInclude(sa => sa.Assignment)
+                            .ThenInclude(a => a.Lesson)
+                    .Include(u => u.Courses)  // курсы, которые создал преподаватель
+                        .ThenInclude(c => c.Lessons)
+                            .ThenInclude(l => l.Assignments)
+                                .ThenInclude(a => a.Questions)
+                                    .ThenInclude(q => q.Answers)
+                    .Include(u => u.Courses)
+                        .ThenInclude(c => c.Enrollments)
+                 
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
+                if (user == null)
+                {
+                    return NotFound(new { message = "Пользователь не найден" });
+                }
+
+                // 1. Удаляем записи о прогрессе уроков
+                var lessonProgress = await _context.LessonProgress
+                    .Where(lp => lp.StudentId == id)
+                    .ToListAsync();
+                if (lessonProgress.Any())
+                    _context.LessonProgress.RemoveRange(lessonProgress);
+
+                // 2. Удаляем записи о зачислениях на курсы
+                if (user.Enrollments.Any())
+                    _context.Enrollments.RemoveRange(user.Enrollments);
+
+                // 3. Удаляем выполненные задания
+                if (user.Studentassignments.Any())
+                    _context.Studentassignments.RemoveRange(user.Studentassignments);
+
+                // 4. Если пользователь преподаватель - удаляем его курсы со всеми связанными данными
+                if (user.Role == "Teacher" && user.Courses.Any())
+                {
+                    foreach (var course in user.Courses)
+                    {
+                        // Удаляем записи о зачислениях на курс
+                        if (course.Enrollments.Any())
+                            _context.Enrollments.RemoveRange(course.Enrollments);
+
+                        // Удаляем уроки и связанные с ними данные
+                        foreach (var lesson in course.Lessons)
+                        {
+                            foreach (var assignment in lesson.Assignments)
+                            {
+                                foreach (var question in assignment.Questions)
+                                {
+                                    if (question.Answers.Any())
+                                        _context.Answers.RemoveRange(question.Answers);
+                                }
+                                if (assignment.Questions.Any())
+                                    _context.Questions.RemoveRange(assignment.Questions);
+
+                                var studentResults = await _context.Studentassignments
+                                    .Where(sa => sa.AssignmentId == assignment.Id)
+                                    .ToListAsync();
+                                if (studentResults.Any())
+                                    _context.Studentassignments.RemoveRange(studentResults);
+                            }
+                            if (lesson.Assignments.Any())
+                                _context.Assignments.RemoveRange(lesson.Assignments);
+                        }
+                        if (course.Lessons.Any())
+                            _context.Lessons.RemoveRange(course.Lessons);
+                    }
+                    _context.Courses.RemoveRange(user.Courses);
+                }
+
+                
+
+                // 6. Удаляем самого пользователя
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Пользователь {UserId} удалён", id);
+
+                return Ok(new { message = "Пользователь успешно удалён" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при удалении пользователя ID: {UserId}", id);
+                return StatusCode(500, new { message = "Ошибка при удалении пользователя: " + ex.Message });
+            }
+        }
     }
 }

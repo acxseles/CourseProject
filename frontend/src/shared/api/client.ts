@@ -1,43 +1,28 @@
-import axios, { AxiosError } from 'axios';
-import type { AxiosInstance } from 'axios';
-import { tokenService } from './tokenService';
+import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const client: AxiosInstance = axios.create({
-  baseURL: API_URL,
+export const apiClient = axios.create({
+  baseURL: 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor - добавляем токен
-client.interceptors.request.use(
-  (config) => {
-    const token = tokenService.getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    // Don't set Content-Type for blob requests
-    if (config.responseType === 'blob') {
-      delete config.headers['Content-Type'];
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-// Response interceptor - обработка ошибок
-client.interceptors.response.use(
+apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  (error) => {
     if (error.response?.status === 401) {
-      tokenService.removeToken();
-      // Перенаправляем на логин
-      window.location.href = '/auth/login';
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
-
-export default client;

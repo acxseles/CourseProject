@@ -1,22 +1,26 @@
-import client from './client';
-import type { AuthResponseDto, LoginDto, RegisterDto } from '../types';
+import { apiClient } from './client';
+
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+}
 
 export const authApi = {
-  register: async (data: RegisterDto): Promise<AuthResponseDto> => {
-    // Backend expects PascalCase
-    const payload = {
-      email: data.email,
-      password: data.password,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-    };
-    const response = await client.post('/auth/register', payload);
+  login: async (data: LoginData) => {
+    const response = await apiClient.post('/auth/login', data);
     return response.data;
   },
-
-  login: async (data: LoginDto): Promise<AuthResponseDto> => {
-    const response = await client.post('/auth/login', data);
+  
+  register: async (data: RegisterData) => {
+    const response = await apiClient.post('/auth/register', data);
     return response.data;
   },
 };

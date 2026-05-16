@@ -1,135 +1,73 @@
-# School Swedish - Frontend
+# React + TypeScript + Vite
 
-Frontend приложение для платформы онлайн-обучения шведскому языку, построенное на React 19 + TypeScript + Vite.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 🚀 Быстрый старт
+Currently, two official plugins are available:
 
-### Требования
-- Node.js 18+
-- npm или yarn
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-### Установка и запуск
+## React Compiler
 
-```bash
-# Установить зависимости
-npm install
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-# Запустить dev сервер
-npm run dev
+## Expanding the ESLint configuration
 
-# Или собрать production build
-npm run build
-npm run preview
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-Dev сервер запустится на `http://localhost:5173`
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-## 📖 Документация
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-- **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Полный гайд разработчика
-- **[../FRONTEND_PLAN.md](../FRONTEND_PLAN.md)** - План разработки (290+ задач)
-- **[../IMPLEMENTATION_SUMMARY.md](../IMPLEMENTATION_SUMMARY.md)** - Что было сделано
-
-## 🏗️ Архитектура
-
-Проект использует **Feature-Sliced Design** архитектуру:
-
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-src/
-├── app/          - Инициализация приложения
-├── pages/        - Страницы (роуты)
-├── features/     - Бизнес-функции
-├── entities/     - Доменные сущности
-├── shared/       - Переиспользуемый код
-│   ├── api/      - HTTP клиент
-│   ├── ui/       - UI компоненты
-│   ├── types/    - TypeScript типы
-│   └── lib/      - Утилиты
-└── widgets/      - Составные блоки
-```
-
-## 🛠️ Технологический стек
-
-| Компонент | Технология |
-|-----------|-----------|
-| **UI** | React 19 |
-| **Язык** | TypeScript 5.9 |
-| **Стили** | Tailwind CSS |
-| **Сборка** | Vite 7.2 |
-| **Роутинг** | React Router 7 |
-| **HTTP** | Axios |
-| **State** | Zustand |
-| **Server State** | TanStack Query 5 |
-| **Forms** | React Hook Form + Zod |
-| **Icons** | Lucide React |
-
-## ✨ Функциональность
-
-### ✅ Реализовано (Фазы 0-1)
-- Аутентификация (регистрация, вход, выход)
-- JWT токены и защищенные роуты
-- Landing page с примерами курсов
-- Dashboard для авторизованных пользователей
-- Responsive дизайн
-- UI компоненты и утилиты
-
-### 🔄 Предстоит (Фазы 3+)
-- Каталог курсов с поиском
-- Личный кабинет студента
-- Панель преподавателя
-- Админ-панель
-- Тестирование
-
-## 🔐 Аутентификация
-
-```typescript
-import { useAuth, useLogin } from '@/features/auth';
-
-const MyComponent = () => {
-  const { user, isAuthenticated } = useAuth();
-  const { mutate: login } = useLogin();
-};
-```
-
-## 🌐 Переменные окружения
-
-Создайте `.env`:
-```env
-VITE_API_URL=https://localhost:7106
-```
-
-## 📝 Scripts
-
-```bash
-npm run dev       # Development
-npm run build     # Production build
-npm run preview   # Preview build
-npm run lint      # ESLint проверка
-```
-
-## 📊 Статистика
-
-- **Bundle Size**: 146.66 kB (gzipped) ✨
-- **Build Time**: ~14 сек
-- **TypeScript**: Strict mode
-- **ESLint**: Включен
-
-## 🧪 Тестирование
-
-После запуска backend seed:
-```
-Email: student1@school.com
-Password: temp123
-```
-
-## 🚨 Troubleshooting
-
-```bash
-# Перестроить проект
-rm -rf node_modules dist
-npm install && npm run build
-```
-
----
-
-**Статус**: ✨ Фазы 0-1 завершены. Готово к Фазе 3!
