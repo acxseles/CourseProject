@@ -18,11 +18,7 @@ import { ManageTestsPage } from './pages/admin/ManageTestsPage';
 import { ImportExportPage } from './pages/admin/ImportExportPage';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, checkAuth, isLoading } = useAuthStore();
-  
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  const { user, isLoading } = useAuthStore();
   
   if (isLoading) {
     return <div style={{ textAlign: 'center', padding: '50px' }}>Загрузка...</div>;
@@ -32,108 +28,114 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  const { checkAuth, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', padding: '50px' }}>Загрузка...</div>;
+  }
+
   return (
     <>
       <Toaster position="top-center" />
       <BrowserRouter>
         <Routes>
-  {/* Страницы без шапки */}
-  <Route path="/" element={<HomePage />} />
-  <Route path="/login" element={<LoginPage />} />
-  
-  {/* Страницы с единой шапкой */}
-  <Route path="/courses" element={
-    <Layout>
-      <CoursesCatalogPage />
-    </Layout>
-  } />
-  <Route path="/dashboard" element={
-    <PrivateRoute>
-      <Layout>
-        <DashboardPage />
-      </Layout>
-    </PrivateRoute>
-  } />
-  <Route path="/my-courses" element={
-    <PrivateRoute>
-      <Layout>
-        <MyCoursesPage />
-      </Layout>
-    </PrivateRoute>
-  } />
-  <Route path="/course/new" element={
-    <PrivateRoute>
-      <Layout>
-        <CourseFormPage />
-      </Layout>
-    </PrivateRoute>
-  } />
-  <Route path="/course/edit/:id" element={
-    <PrivateRoute>
-      <Layout>
-        <CourseFormPage />
-      </Layout>
-    </PrivateRoute>
-  } />
-  <Route path="/course/:courseId/lessons" element={
-    <PrivateRoute>
-      <Layout>
-        <CourseLessonsPage />
-      </Layout>
-    </PrivateRoute>
-  } />
-  {/* НОВЫЙ РОУТ для урока - с courseId и lessonId */}
-  <Route path="/course/:courseId/lesson/:lessonId" element={
-    <PrivateRoute>
-      <Layout>
-        <LessonPage />
-      </Layout>
-    </PrivateRoute>
-  } />
-  <Route path="/course/:courseId/lesson/:lessonId/test" element={
-  <PrivateRoute>
-    <Layout>
-      <TestPage />
-    </Layout>
-  </PrivateRoute>
-} />
-<Route path="/course/:courseId/lesson/:lessonId/manage-test" element={
-  <PrivateRoute>
-    <Layout>
-      <ManageTestsPage />
-    </Layout>
-  </PrivateRoute>
-} />
-
-<Route path="/course/:courseId/lesson/new" element={
-  <PrivateRoute>
-    <Layout>
-      <LessonFormPage />
-    </Layout>
-  </PrivateRoute>
-} />
-<Route path="/course/:courseId/lesson/:lessonId/edit" element={
-  <PrivateRoute>
-    <Layout>
-      <LessonFormPage />
-    </Layout>
-  </PrivateRoute>
-} />
-<Route path="/users" element={
-  <PrivateRoute>
-    <Layout>
-      <UsersManagementPage />
-    </Layout>
-  </PrivateRoute>
-} />
-<Route path="/import-export" element={
-  <PrivateRoute>
-    <Layout>
-      <ImportExportPage />
-    </Layout>
-  </PrivateRoute>
-} />
-</Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          
+          <Route path="/courses" element={
+            <Layout>
+              <CoursesCatalogPage />
+            </Layout>
+          } />
+          <Route path="/dashboard" element={
+            <PrivateRoute>
+              <Layout>
+                <DashboardPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/my-courses" element={
+            <PrivateRoute>
+              <Layout>
+                <MyCoursesPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/new" element={
+            <PrivateRoute>
+              <Layout>
+                <CourseFormPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/edit/:id" element={
+            <PrivateRoute>
+              <Layout>
+                <CourseFormPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/:courseId/lessons" element={
+            <PrivateRoute>
+              <Layout>
+                <CourseLessonsPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/:courseId/lesson/:lessonId" element={
+            <PrivateRoute>
+              <Layout>
+                <LessonPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/:courseId/lesson/:lessonId/test" element={
+            <PrivateRoute>
+              <Layout>
+                <TestPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/:courseId/lesson/:lessonId/manage-test" element={
+            <PrivateRoute>
+              <Layout>
+                <ManageTestsPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/:courseId/lesson/new" element={
+            <PrivateRoute>
+              <Layout>
+                <LessonFormPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/course/:courseId/lesson/:lessonId/edit" element={
+            <PrivateRoute>
+              <Layout>
+                <LessonFormPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/users" element={
+            <PrivateRoute>
+              <Layout>
+                <UsersManagementPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+          <Route path="/import-export" element={
+            <PrivateRoute>
+              <Layout>
+                <ImportExportPage />
+              </Layout>
+            </PrivateRoute>
+          } />
+        </Routes>
       </BrowserRouter>
     </>
   );

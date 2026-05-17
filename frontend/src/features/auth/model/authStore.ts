@@ -34,7 +34,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isLoading: false,
+  isLoading: true,
   error: null,
 
   login: async (data) => {
@@ -70,14 +70,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   checkAuth: () => {
+    const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-    if (userStr) {
+    
+    if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        set({ user });
+        set({ user, isLoading: false });
       } catch (error) {
-        console.error('Ошибка парсинга user:', error);
+        set({ user: null, isLoading: false });
       }
+    } else {
+      set({ user: null, isLoading: false });
     }
   },
 }));

@@ -16,57 +16,35 @@ interface Course {
 
 export const CoursesCatalogPage = () => {
   const { user } = useAuth();
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<number[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState('all');
-  // Состояние для отслеживания процесса записи
-    const [enrollingCourseId, setEnrollingCourseId] = useState<number | null>(null);
+  const [enrollingCourseId, setEnrollingCourseId] = useState<number | null>(null);
 
-// Функция записи на курс
-const handleEnroll = async (courseId: number) => {
-  try {
-    setEnrollingCourseId(courseId);
-   await enrollmentsApi.enrollWithPayment(courseId, user?.id!);
-    alert('Вы успешно записались на курс!');
-  } catch (err: any) {
-    console.error('Ошибка:', err);
-    alert(err.response?.data?.message || 'Ошибка при записи на курс');
-  } finally {
-    setEnrollingCourseId(null);
-  }
-};
-
-// Функция записи с оплатой
-const handleEnrollWithPayment = async (courseId: number) => {
-  try {
-    setEnrollingCourseId(courseId);
-    const result = await enrollmentsApi.enrollWithPayment(courseId, user?.id!);
-    
-    // Открываем окно оплаты
-    window.open(result.paymentUrl, '_blank');
-    
-    // Показываем сообщение
-    alert('Вы перенаправлены на страницу оплаты. После оплаты курс появится в вашем профиле.');
-    
-    // Периодически проверяем статус оплаты
-    const checkInterval = setInterval(async () => {
-      const status = await enrollmentsApi.checkEnrollmentStatus(result.enrollmentId);
-      if (status.isPaid) {
-        clearInterval(checkInterval);
-        alert('Оплата прошла успешно! Вы записаны на курс.');
-        // Обновляем страницу
-        window.location.reload();
+  // Загрузка записанных курсов
+  useEffect(() => {
+    const fetchEnrolledCourses = async () => {
+      if (user?.role === 'Student') {
+        try {
+          const response = await apiClient.get(`/enrollments/student/${user.id}`);
+          let enrollments = [];
+          if (Array.isArray(response.data)) {
+            enrollments = response.data;
+          } else if (response.data?.items) {
+            enrollments = response.data.items;
+          }
+          const ids = enrollments.map((e: any) => e.courseId || e.course?.id);
+          setEnrolledCourseIds(ids);
+        } catch (err) {
+          console.error('Ошибка загрузки записанных курсов:', err);
+        }
       }
-    }, 3000); // проверяем каждые 3 секунды
-    
-  } catch (err: any) {
-    console.error('Ошибка:', err);
-    alert(err.response?.data?.message || 'Ошибка при создании платежа');
-  } finally {
-    setEnrollingCourseId(null);
-  }
-};
+    };
+    fetchEnrolledCourses();
+  }, [user]);
 
+  // Загрузка всех курсов
   useEffect(() => {
     apiClient.get('/courses')
       .then(response => {
@@ -79,12 +57,46 @@ const handleEnrollWithPayment = async (courseId: number) => {
       });
   }, []);
 
+  const handleEnrollWithPayment = async (courseId: number) => {
+    try {
+      setEnrollingCourseId(courseId);
+      const result = await enrollmentsApi.enrollWithPayment(courseId);
+      
+      if (result.paymentUrl) {
+        window.open(result.paymentUrl, '_blank');
+      } else {
+        alert('Ошибка: не получена ссылка на оплату');
+      }
+      
+      const checkInterval = setInterval(async () => {
+        const status = await enrollmentsApi.checkPaymentStatus(result.enrollmentId);
+        if (status.isPaid) {
+          clearInterval(checkInterval);
+          alert('Оплата прошла успешно! Курс добавлен в "Мои курсы".');
+          window.location.reload();
+        }
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Ошибка:', err);
+      alert('Ошибка при создании платежа');
+    } finally {
+      setEnrollingCourseId(null);
+    }
+  };
+
   const levels = ['all', 'Beginner', 'Intermediate', 'Advanced'];
   const levelNames: Record<string, string> = {
     'all': 'Все уровни',
-    'Beginner': 'Начинающий (A1)',
-    'Intermediate': 'Средний (A2-B1)',
-    'Advanced': 'Продвинутый (B2-C1)'
+    'Beginner': 'Начинающий',
+    'Intermediate': 'Средний',
+    'Advanced': 'Продвинутый'
+  };
+
+  const levelColors: Record<string, string> = {
+    'Beginner': '#4caf50',
+    'Intermediate': '#ff9800',
+    'Advanced': '#f44336'
   };
 
   const filteredCourses = selectedLevel === 'all' 
@@ -92,33 +104,71 @@ const handleEnrollWithPayment = async (courseId: number) => {
     : courses.filter(c => c.level === selectedLevel);
 
   if (loading) {
-    return <div style={{ padding: '100px', textAlign: 'center' }}>Загрузка...</div>;
+    return (
+      <div style={{ background: '#e8f0fe', minHeight: '100vh', padding: '80px 24px' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '30px' }}>
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} style={{ 
+                backgroundColor: 'white', 
+                borderRadius: '24px', 
+                padding: '24px',
+                animation: 'pulse 1.5s ease-in-out infinite'
+              }}>
+                <div style={{ height: '28px', backgroundColor: '#e0e0e0', borderRadius: '8px', marginBottom: '16px', width: '70%' }} />
+                <div style={{ height: '16px', backgroundColor: '#e0e0e0', borderRadius: '4px', marginBottom: '8px' }} />
+                <div style={{ height: '16px', backgroundColor: '#e0e0e0', borderRadius: '4px', marginBottom: '24px', width: '80%' }} />
+                <div style={{ height: '40px', backgroundColor: '#e0e0e0', borderRadius: '30px' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div style={{ background: '#e8f0fe', minHeight: '100vh', padding: '80px 24px' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        <h1 style={{ fontSize: '42px', fontWeight: 'bold', color: '#0A2F5A', marginBottom: '12px' }}>
-          Все курсы шведского языка
-        </h1>
-        <p style={{ fontSize: '18px', color: '#555', marginBottom: '32px' }}>
-          Выберите курс, который подходит именно вам
-        </p>
+        {/* Заголовок */}
+        <div style={{ marginBottom: '48px', textAlign: 'center' }}>
+          <h1 style={{ 
+            fontSize: '48px', 
+            fontWeight: 'bold', 
+            color: '#0A2F5A', 
+            marginBottom: '16px',
+            fontFamily: "'Soyuz Grotesk', 'Montserrat', sans-serif"
+          }}>
+            Все курсы шведского языка
+          </h1>
+          <p style={{ fontSize: '18px', color: '#555', maxWidth: '600px', margin: '0 auto' }}>
+            Выберите курс, который подходит именно вам, и начните обучение уже сегодня
+          </p>
+        </div>
 
         {/* Фильтры */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '40px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '12px', 
+          flexWrap: 'wrap', 
+          marginBottom: '48px'
+        }}>
           {levels.map(level => (
             <button
               key={level}
               onClick={() => setSelectedLevel(level)}
               style={{
-                padding: '8px 20px',
-                borderRadius: '30px',
-                border: '1px solid #2f70d2',
+                padding: '10px 24px',
+                borderRadius: '40px',
+                border: 'none',
                 backgroundColor: selectedLevel === level ? '#2f70d2' : 'white',
                 color: selectedLevel === level ? 'white' : '#2f70d2',
                 cursor: 'pointer',
-                fontWeight: '500'
+                fontWeight: '600',
+                fontSize: '14px',
+                transition: 'all 0.2s ease',
+                boxShadow: selectedLevel === level ? '0 4px 12px rgba(47,112,210,0.3)' : '0 2px 4px rgba(0,0,0,0.05)'
               }}
             >
               {levelNames[level]}
@@ -127,73 +177,206 @@ const handleEnrollWithPayment = async (courseId: number) => {
         </div>
 
         {/* Сетка курсов */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '30px' }}>
-          {filteredCourses.map(course => (
-            <div key={course.id} style={{ backgroundColor: 'white', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }}>
-              <img 
-                src="/images/course-placeholder.jpg" 
-                alt={course.title}
-                style={{ width: '100%', height: '200px', objectFit: 'cover', backgroundColor: '#2f70d2' }}
-                onError={(e) => e.currentTarget.src = 'https://placehold.co/600x400/2f70d2/white?text=Course'}
-              />
-              <div style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span style={{ backgroundColor: '#e8f0fe', color: '#2f70d2', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
-                    {levelNames[course.level]}
-                  </span>
-                  <span style={{ color: '#666', fontSize: '14px' }}>👨‍🏫 {course.teacherName}</span>
-                </div>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#0A2F5A', marginBottom: '10px' }}>{course.title}</h3>
-                <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>{course.description}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '28px', fontWeight: 'bold', color: '#2f70d2' }}>{course.price} ₽</span>
-                  <span style={{ color: '#888', fontSize: '14px' }}>⏱ {course.durationHours} часов</span>
+        {filteredCourses.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '80px', 
+            backgroundColor: 'white', 
+            borderRadius: '24px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '16px' }}>📚</div>
+            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>Курсы не найдены</h3>
+            <p style={{ color: '#666' }}>Попробуйте изменить фильтры</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '32px' }}>
+            {filteredCourses.map(course => {
+              const isEnrolled = enrolledCourseIds.includes(course.id);
+              
+              return (
+                <div 
+                  key={course.id} 
+                  style={{ 
+                    backgroundColor: 'white', 
+                    borderRadius: '24px', 
+                    padding: '28px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.05)';
+                  }}
+                >
+                  {/* Уровень */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <span style={{
+                      backgroundColor: `${levelColors[course.level]}20`,
+                      color: levelColors[course.level],
+                      padding: '6px 14px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      display: 'inline-block'
+                    }}>
+                      {levelNames[course.level]}
+                    </span>
+                  </div>
 
-                  
+                  {/* Заголовок */}
+                  <h2 style={{ 
+                    fontSize: '24px', 
+                    fontWeight: 'bold', 
+                    color: '#0A2F5A', 
+                    marginBottom: '12px',
+                    lineHeight: '1.3'
+                  }}>
+                    {course.title}
+                  </h2>
+
+                  {/* Описание */}
+                  <p style={{ 
+                    color: '#666', 
+                    fontSize: '15px', 
+                    lineHeight: '1.5', 
+                    marginBottom: '20px',
+                    flex: 1
+                  }}>
+                    {course.description.length > 120 
+                      ? course.description.substring(0, 120) + '...' 
+                      : course.description}
+                  </p>
+
+                  {/* Преподаватель */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    marginBottom: '16px',
+                    color: '#888',
+                    fontSize: '14px'
+                  }}>
+                    <span>👨‍🏫</span>
+                    <span>{course.teacherName}</span>
+                    <span style={{ marginLeft: 'auto' }}>⏱ {course.durationHours} ч</span>
+                  </div>
+
+                  {/* Цена */}
+                  <div style={{ 
+                    borderTop: '1px solid #eee', 
+                    paddingTop: '20px',
+                    marginBottom: '20px'
+                  }}>
+                    <span style={{ 
+                      fontSize: '32px', 
+                      fontWeight: 'bold', 
+                      color: '#2f70d2'
+                    }}>
+                      {course.price.toLocaleString()} ₽
+                    </span>
+                  </div>
+
+                  {/* Кнопка */}
+                  {user?.role === 'Student' ? (
+                    isEnrolled ? (
+                      <div style={{ marginTop: 'auto' }}>
+                        <div style={{ 
+                          backgroundColor: '#e8f5e9', 
+                          color: '#2e7d32', 
+                          padding: '10px', 
+                          borderRadius: '40px',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                          marginBottom: '12px'
+                        }}>
+                          ✅ Вы записаны на курс
+                        </div>
+                        <Link to={`/course/${course.id}/lessons`}>
+                          <button style={{
+                            width: '100%',
+                            padding: '12px',
+                            backgroundColor: '#e8f0fe',
+                            color: '#2f70d2',
+                            border: 'none',
+                            borderRadius: '40px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            transition: 'background 0.2s'
+                          }}>
+                            Перейти к урокам →
+                          </button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => handleEnrollWithPayment(course.id)}
+                        disabled={enrollingCourseId === course.id}
+                        style={{
+                          width: '100%',
+                          padding: '14px',
+                          background: 'linear-gradient(135deg, #2f70d2 0%, #27ace0 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '40px',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          transition: 'transform 0.2s, opacity 0.2s',
+                          opacity: enrollingCourseId === course.id ? 0.7 : 1
+                        }}
+                        onMouseEnter={(e) => {
+                          if (enrollingCourseId !== course.id) {
+                            e.currentTarget.style.transform = 'scale(1.02)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        {enrollingCourseId === course.id ? 'Обработка...' : `Записаться • ${course.price.toLocaleString()} ₽`}
+                      </button>
+                    )
+                  ) : user && (
+                    <Link to={`/course/${course.id}/lessons`}>
+                      <button style={{
+                        width: '100%',
+                        padding: '12px',
+                        backgroundColor: '#e8f0fe',
+                        color: '#2f70d2',
+                        border: 'none',
+                        borderRadius: '40px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '16px'
+                      }}>
+                        Смотреть уроки
+                      </button>
+                    </Link>
+                  )}
                 </div>
-                {user && (
-                  <Link to={`/course/${course.id}/lessons`}>
-                    {user?.role === 'Student' ? (
-  <button 
-    onClick={() => handleEnrollWithPayment(course.id)}
-    disabled={enrollingCourseId === course.id}
-    style={{
-      width: '100%',
-      marginTop: '16px',
-      padding: '10px',
-      backgroundColor: '#2f70d2',
-      color: 'white',
-      border: 'none',
-      borderRadius: '30px',
-      cursor: 'pointer',
-      opacity: enrollingCourseId === course.id ? 0.7 : 1
-    }}
-  >
-    {enrollingCourseId === course.id ? 'Обработка...' : `Записаться • ${course.price} ₽`}
-  </button>
-) : user && (
-  <Link to={`/course/${course.id}/lessons`}>
-    <button style={{
-      width: '100%',
-      marginTop: '16px',
-      padding: '10px',
-      backgroundColor: '#e8f0fe',
-      color: '#2f70d2',
-      border: 'none',
-      borderRadius: '30px',
-      cursor: 'pointer'
-    }}>
-      Смотреть уроки
-    </button>
-  </Link>
-)}
-                  </Link>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 };

@@ -7,6 +7,7 @@ using SchoolSwedishAPI.Services;
 using System.Text;
 using FluentValidation.AspNetCore;
 using Serilog;
+using Robokassa.NET.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +113,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+
+
+
+builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<PdfExportService>();

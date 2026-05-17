@@ -201,6 +201,9 @@ namespace SchoolSwedishAPI.Controllers
                     .ThenInclude(l => l.Assignments)
                         .ThenInclude(a => a.Questions)
                             .ThenInclude(q => q.Answers)
+                .Include(c => c.Lessons)
+                    .ThenInclude(l => l.Assignments)
+                        .ThenInclude(a => a.Studentassignments)
                 .Include(c => c.Enrollments)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
@@ -216,28 +219,58 @@ namespace SchoolSwedishAPI.Controllers
                 return Forbid();
             }
 
-            // Удаляем все связанные данные
+            // 1. Удаляем прогресс уроков
+            var lessonIds = course.Lessons.Select(l => l.Id).ToList();
+            var lessonProgress = await _context.LessonProgress
+                .Where(lp => lessonIds.Contains(lp.LessonId))
+                .ToListAsync();
+            if (lessonProgress.Any())
+                _context.LessonProgress.RemoveRange(lessonProgress);
+
+            // 2. Удаляем ответы на вопросы и сами вопросы
             foreach (var lesson in course.Lessons)
             {
                 foreach (var assignment in lesson.Assignments)
                 {
                     foreach (var question in assignment.Questions)
                     {
-                        _context.Answers.RemoveRange(question.Answers);
+                        if (question.Answers.Any())
+                            _context.Answers.RemoveRange(question.Answers);
                     }
-                    _context.Questions.RemoveRange(assignment.Questions);
+                    if (assignment.Questions.Any())
+                        _context.Questions.RemoveRange(assignment.Questions);
 
+                    // 3. Удаляем выполненные задания студентов
                     var studentResults = await _context.Studentassignments
                         .Where(sa => sa.AssignmentId == assignment.Id)
                         .ToListAsync();
-                    _context.Studentassignments.RemoveRange(studentResults);
+                    if (studentResults.Any())
+                        _context.Studentassignments.RemoveRange(studentResults);
                 }
-                _context.Assignments.RemoveRange(lesson.Assignments);
+                // 4. Удаляем задания (тесты)
+                if (lesson.Assignments.Any())
+                    _context.Assignments.RemoveRange(lesson.Assignments);
             }
-            _context.Lessons.RemoveRange(course.Lessons);
-            _context.Enrollments.RemoveRange(course.Enrollments);
 
+            // 5. Удаляем уроки
+            if (course.Lessons.Any())
+                _context.Lessons.RemoveRange(course.Lessons);
+
+            // 6. Удаляем платежи (связанные с зачислениями)
+            var enrollmentIds = course.Enrollments.Select(e => e.Id).ToList();
+            var payments = await _context.Payments
+                .Where(p => enrollmentIds.Contains(p.EnrollmentId))
+                .ToListAsync();
+            if (payments.Any())
+                _context.Payments.RemoveRange(payments);
+
+            // 7. Удаляем зачисления на курс
+            if (course.Enrollments.Any())
+                _context.Enrollments.RemoveRange(course.Enrollments);
+
+            // 8. Удаляем сам курс
             _context.Courses.Remove(course);
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Курс {CourseId} удален пользователем {UserId}", id, currentUserId);
@@ -613,12 +646,14 @@ namespace SchoolSwedishAPI.Controllers
             return Ok(new { progress, completedLessonIds = completedLessons });
         }
 
-        // Завершить урок
+        
+
+        // Отметить урок как пройденный
         [HttpPost("lessons/{lessonId}/complete")]
         [Authorize(Roles = "Student")]
         public async Task<IActionResult> CompleteLesson(int lessonId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
             var existing = await _context.LessonProgress
                 .FirstOrDefaultAsync(lp => lp.StudentId == userId && lp.LessonId == lessonId);
