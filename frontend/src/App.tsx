@@ -16,6 +16,7 @@ import { UsersManagementPage } from './pages/admin/UsersManagementPage';
 import { LessonFormPage } from './pages/courses/LessonFormPage';
 import { ManageTestsPage } from './pages/admin/ManageTestsPage';
 import { ImportExportPage } from './pages/admin/ImportExportPage';
+import { CourseStudentsPage } from './pages/courses/CourseStudentsPage';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuthStore();
@@ -135,6 +136,13 @@ function App() {
               </Layout>
             </PrivateRoute>
           } />
+          <Route path="/course/:courseId/students" element={
+  <PrivateRoute>
+    <Layout>
+      <CourseStudentsPage />
+    </Layout>
+  </PrivateRoute>
+} />
         </Routes>
       </BrowserRouter>
     </>

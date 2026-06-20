@@ -646,33 +646,299 @@ namespace SchoolSwedishAPI.Controllers
             return Ok(new { progress, completedLessonIds = completedLessons });
         }
 
-        
+
 
         // Отметить урок как пройденный
-        [HttpPost("lessons/{lessonId}/complete")]
+        //[HttpPost("lessons/{lessonId}/complete")]
+        //[Authorize(Roles = "Student")]
+        //public async Task<IActionResult> CompleteLesson(int lessonId, [FromBody] CompleteLessonRequest? request)
+        //{
+        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
+        //    var userId = int.Parse(userIdClaim);
+
+        //    // Находим урок и курс
+        //    var lesson = await _context.Lessons.FindAsync(lessonId);
+        //    if (lesson == null) return NotFound();
+
+        //    var courseId = lesson.CourseId;
+
+        //    // Находим запись о зачислении студента на курс
+        //    var enrollment = await _context.Enrollments
+        //        .FirstOrDefaultAsync(e => e.StudentId == userId && e.CourseId == courseId);
+
+        //    if (enrollment == null)
+        //        return NotFound(new { message = "Вы не записаны на этот курс" });
+
+        //    var existing = await _context.LessonProgress
+        //        .FirstOrDefaultAsync(lp => lp.StudentId == userId && lp.LessonId == lessonId);
+
+        //    // Если есть результат теста
+        //    if (request?.TestScore.HasValue == true)
+        //    {
+        //        if (existing == null)
+        //        {
+        //            existing = new LessonProgress
+        //            {
+        //                StudentId = userId,
+        //                LessonId = lessonId,
+        //                TestAttempts = 1,
+        //                TestScore = request.TestScore,
+        //                TestCompletedAt = DateTime.UtcNow,
+        //                IsCompleted = request.TestScore >= 60
+        //            };
+        //            if (existing.IsCompleted)
+        //                existing.CompletedAt = DateTime.UtcNow;
+        //            _context.LessonProgress.Add(existing);
+        //        }
+        //        else
+        //        {
+        //            existing.TestAttempts++;
+        //            existing.TestScore = request.TestScore;
+        //            existing.TestCompletedAt = DateTime.UtcNow;
+        //            if (request.TestScore >= 60 && !existing.IsCompleted)
+        //            {
+        //                existing.IsCompleted = true;
+        //                existing.CompletedAt = DateTime.UtcNow;
+        //            }
+        //        }
+        //        await _context.SaveChangesAsync();
+
+        //        // ОБНОВЛЯЕМ ПРОГРЕСС В ТАБЛИЦЕ ENROLLMENTS
+        //        // ОБНОВЛЯЕМ ПРОГРЕСС В ТАБЛИЦЕ ENROLLMENTS
+        //        if (existing.IsCompleted)
+        //        {
+        //            var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+        //            var completedLessons = await _context.LessonProgress
+        //                .Where(lp => lp.StudentId == userId && lp.IsCompleted)
+        //                .Where(lp => _context.Lessons.Any(l => l.Id == lp.LessonId && l.CourseId == courseId))
+        //                .CountAsync();
+
+        //            var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+
+        //            Console.WriteLine($"=== ОБНОВЛЕНИЕ ПРОГРЕССА ===");
+        //            Console.WriteLine($"StudentId: {userId}, CourseId: {courseId}");
+        //            Console.WriteLine($"TotalLessons: {totalLessons}, CompletedLessons: {completedLessons}");
+        //            Console.WriteLine($"Old Progress: {enrollment.Progress}, New Progress: {newProgress}");
+
+        //            enrollment.Progress = newProgress;
+        //            var saveResult = await _context.SaveChangesAsync();
+        //            Console.WriteLine($"SaveChanges result: {saveResult}");
+        //        }
+
+        //        return Ok(new
+        //        {
+        //            isPassed = request.TestScore >= 60,
+        //            score = request.TestScore,
+        //            attempts = existing.TestAttempts
+        //        });
+        //    }
+
+        //    // Обычное завершение урока (без теста)
+        //    if (existing == null)
+        //    {
+        //        existing = new LessonProgress
+        //        {
+        //            StudentId = userId,
+        //            LessonId = lessonId,
+        //            IsCompleted = true,
+        //            CompletedAt = DateTime.UtcNow
+        //        };
+        //        _context.LessonProgress.Add(existing);
+        //        await _context.SaveChangesAsync();
+
+        //        var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+        //        var completedLessons = await _context.LessonProgress
+        //            .Where(lp => lp.StudentId == userId && lp.IsCompleted && lp.Lesson.CourseId == courseId)
+        //            .CountAsync();
+
+        //        var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+        //        enrollment.Progress = newProgress;
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    else if (!existing.IsCompleted)
+        //    {
+        //        existing.IsCompleted = true;
+        //        existing.CompletedAt = DateTime.UtcNow;
+        //        await _context.SaveChangesAsync();
+
+        //        var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+        //        var completedLessons = await _context.LessonProgress
+        //            .Where(lp => lp.StudentId == userId && lp.IsCompleted && lp.Lesson.CourseId == courseId)
+        //            .CountAsync();
+
+        //        var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+        //        enrollment.Progress = newProgress;
+        //        await _context.SaveChangesAsync();
+        //    }
+
+        //    return Ok(new { isPassed = true });
+        //}
+
+        [HttpPost("{courseId}/lessons/{lessonId}/complete")]
         [Authorize(Roles = "Student")]
-        public async Task<IActionResult> CompleteLesson(int lessonId)
+        public async Task<IActionResult> CompleteLesson(int courseId, int lessonId, [FromBody] CompleteLessonRequest? request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
+            var userId = int.Parse(userIdClaim);
+
+            // Находим урок
+            var lesson = await _context.Lessons.FindAsync(lessonId);
+            if (lesson == null) return NotFound();
+
+            // Находим запись о зачислении студента на курс
+            var enrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(e => e.StudentId == userId && e.CourseId == courseId);
+
+            if (enrollment == null)
+                return NotFound(new { message = "Вы не записаны на этот курс" });
 
             var existing = await _context.LessonProgress
                 .FirstOrDefaultAsync(lp => lp.StudentId == userId && lp.LessonId == lessonId);
 
-            if (existing != null)
-                return Ok(new { message = "Урок уже пройден" });
-
-            var progress = new LessonProgress
+            // Если есть результат теста
+            if (request?.TestScore.HasValue == true)
             {
-                StudentId = userId,
-                LessonId = lessonId,
-                IsCompleted = true,
-                CompletedAt = DateTime.UtcNow
-            };
+                if (existing == null)
+                {
+                    existing = new LessonProgress
+                    {
+                        StudentId = userId,
+                        LessonId = lessonId,
+                        TestAttempts = 1,
+                        TestScore = request.TestScore,
+                        TestCompletedAt = DateTime.UtcNow,
+                        IsCompleted = request.TestScore >= 60
+                    };
+                    if (existing.IsCompleted)
+                        existing.CompletedAt = DateTime.UtcNow;
+                    _context.LessonProgress.Add(existing);
+                }
+                else
+                {
+                    existing.TestAttempts++;
+                    existing.TestScore = request.TestScore;
+                    existing.TestCompletedAt = DateTime.UtcNow;
+                    if (request.TestScore >= 60 && !existing.IsCompleted)
+                    {
+                        existing.IsCompleted = true;
+                        existing.CompletedAt = DateTime.UtcNow;
+                    }
+                }
+                await _context.SaveChangesAsync();
 
-            _context.LessonProgress.Add(progress);
+                // ОБНОВЛЯЕМ ПРОГРЕСС В ТАБЛИЦЕ ENROLLMENTS
+                if (existing.IsCompleted)
+                {
+                    var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+                    var completedLessons = await _context.LessonProgress
+                        .Where(lp => lp.StudentId == userId && lp.IsCompleted && lp.Lesson.CourseId == courseId)
+                        .CountAsync();
+
+                    var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+                    enrollment.Progress = newProgress;
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new
+                {
+                    isPassed = request.TestScore >= 60,
+                    score = request.TestScore,
+                    attempts = existing.TestAttempts
+                });
+            }
+
+            // Обычное завершение урока (без теста)
+            if (existing == null)
+            {
+                existing = new LessonProgress
+                {
+                    StudentId = userId,
+                    LessonId = lessonId,
+                    IsCompleted = true,
+                    CompletedAt = DateTime.UtcNow
+                };
+                _context.LessonProgress.Add(existing);
+                await _context.SaveChangesAsync();
+
+                var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+                var completedLessons = await _context.LessonProgress
+                    .Where(lp => lp.StudentId == userId && lp.IsCompleted && lp.Lesson.CourseId == courseId)
+                    .CountAsync();
+
+                var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+                enrollment.Progress = newProgress;
+                await _context.SaveChangesAsync();
+            }
+            else if (!existing.IsCompleted)
+            {
+                existing.IsCompleted = true;
+                existing.CompletedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+                var completedLessons = await _context.LessonProgress
+                    .Where(lp => lp.StudentId == userId && lp.IsCompleted && lp.Lesson.CourseId == courseId)
+                    .CountAsync();
+
+                var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+                enrollment.Progress = newProgress;
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { isPassed = true });
+        }
+
+        [HttpGet("{courseId}/student-progress/{studentId}")]
+        [Authorize(Roles = "Teacher,Admin")]
+        public async Task<IActionResult> GetStudentProgress(int courseId, int studentId)
+        {
+            var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+            if (totalLessons == 0)
+                return Ok(new { progress = 0, completedLessonIds = new List<int>() });
+
+            var completedLessons = await _context.LessonProgress
+                .Where(lp => lp.StudentId == studentId && lp.IsCompleted)
+                .Join(_context.Lessons.Where(l => l.CourseId == courseId),
+                      lp => lp.LessonId,
+                      l => l.Id,
+                      (lp, l) => l.Id)
+                .ToListAsync();
+
+            var progress = (int)((double)completedLessons.Count / totalLessons * 100);
+
+            return Ok(new { progress, completedLessonIds = completedLessons, totalLessons });
+        }
+
+        [HttpPost("{courseId}/update-progress/{studentId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateProgressManually(int courseId, int studentId)
+        {
+            var totalLessons = await _context.Lessons.CountAsync(l => l.CourseId == courseId);
+            if (totalLessons == 0) return Ok(new { message = "Нет уроков" });
+
+            var completedLessons = await _context.LessonProgress
+                .Where(lp => lp.StudentId == studentId && lp.IsCompleted)
+                .Where(lp => _context.Lessons.Any(l => l.Id == lp.LessonId && l.CourseId == courseId))
+                .CountAsync();
+
+            var newProgress = totalLessons > 0 ? (int)((double)completedLessons / totalLessons * 100) : 0;
+
+            var enrollment = await _context.Enrollments
+                .FirstOrDefaultAsync(e => e.StudentId == studentId && e.CourseId == courseId);
+
+            if (enrollment == null) return NotFound();
+
+            enrollment.Progress = newProgress;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Урок завершён!" });
+            return Ok(new { oldProgress = enrollment.Progress, newProgress, completedLessons, totalLessons });
+        }
+
+        public class CompleteLessonRequest
+        {
+            public int? TestScore { get; set; }
         }
     }
 }

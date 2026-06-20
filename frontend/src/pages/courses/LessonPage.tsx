@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { apiClient } from '../../shared/api/client';
+import toast from 'react-hot-toast';
 
 interface Lesson {
   id: number;
@@ -89,12 +90,12 @@ export const LessonPage = () => {
     const response = await apiClient.post(`/lessons/${lessonId}/complete`);
     console.log('Ответ сервера:', response.data);
     setCompleted(true);
-    alert('Урок завершён!');
+    toast.success('Урок завершён!');
   } catch (err: any) {
     console.error('Ошибка:', err);
     console.error('Статус:', err.response?.status);
     console.error('Данные:', err.response?.data);
-    alert(`Не удалось завершить урок: ${err.response?.data?.message || err.message}`);
+    toast.success(`Не удалось завершить урок: ${err.response?.data?.message || err.message}`);
   } finally {
     setIsCompleting(false);
   }
@@ -106,7 +107,7 @@ export const LessonPage = () => {
       const nextLesson = allLessons[currentIndex + 1];
       navigate(`/course/${courseId}/lesson/${nextLesson.id}`);
     } else {
-      alert('Это последний урок курса!');
+      toast.success('Это последний урок курса!');
       navigate(`/course/${courseId}/lessons`);
     }
   };
@@ -299,24 +300,24 @@ export const LessonPage = () => {
             )}
 
             <button
-              onClick={goToNextLesson}
-              disabled={!hasNext}
-              style={{
-                padding: '12px 28px',
-                backgroundColor: hasNext ? '#2f70d2' : '#f0f0f0',
-                color: hasNext ? 'white' : '#999',
-                border: 'none',
-                borderRadius: '30px',
-                cursor: hasNext ? 'pointer' : 'default',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              Следующий урок →
-            </button>
+  onClick={goToNextLesson}
+  disabled={!hasNext || (user?.role === 'Student' && !completed)}
+  style={{
+    padding: '12px 28px',
+    backgroundColor: (hasNext && (user?.role !== 'Student' || completed)) ? '#2f70d2' : '#f0f0f0',
+    color: (hasNext && (user?.role !== 'Student' || completed)) ? 'white' : '#999',
+    border: 'none',
+    borderRadius: '30px',
+    cursor: (hasNext && (user?.role !== 'Student' || completed)) ? 'pointer' : 'default',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}
+>
+  Следующий урок →
+</button>
           </div>
         </div>
 

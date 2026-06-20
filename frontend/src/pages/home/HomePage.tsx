@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { QuickTest } from '../../components/QuickTest';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { apiClient } from '../../shared/api/client';
 
 interface HomePageProps {
   onOpenAuth?: () => void;
@@ -15,7 +16,7 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
       border: '1px solid #206ec8',
       borderRadius: '60px',
       marginBottom: '16px',
-      backgroundColor: isOpen ? '#e8f0fe' : 'white',  // светло-синий при открытии
+      backgroundColor: isOpen ? '#e8f0fe' : 'white',
       transition: 'all 0.3s',
       overflow: 'hidden'
     }}>
@@ -71,40 +72,97 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
     </div>
   );
 };
-export const HomePage = ({ onOpenAuth }: HomePageProps) => {
- const navigate = useNavigate();
-const { user } = useAuth();
+
+export const HomePage = ({  }: HomePageProps) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [enrolling, setEnrolling] = useState(false);
+
+  // Функция для записи на платные курсы
+  const handlePaidCourseEnroll = (courseId: number) => {
+    if (!user) {
+      ('Для записи на курс необходимо авторизоваться');
+      navigate('/login');
+      return;
+    }
+    // Перенаправляем на страницу оплаты
+    navigate(`/payment/${courseId}`);
+  };
+
+  // Функция для бесплатного пробного курса
+  const handleFreeCourseEnroll = async () => {
+    if (!user) {
+      alert('Для записи на бесплатный курс необходимо авторизоваться');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setEnrolling(true);
+      
+      const freeCourseId = 28; // ID твоего бесплатного курса
+      
+      // Проверяем, не записан ли уже
+      const enrollmentsResponse = await apiClient.get(`/enrollments/student/${user.id}`);
+      let enrollments = [];
+      if (Array.isArray(enrollmentsResponse.data)) {
+        enrollments = enrollmentsResponse.data;
+      } else if (enrollmentsResponse.data?.items) {
+        enrollments = enrollmentsResponse.data.items;
+      }
+      const isAlreadyEnrolled = enrollments.some((e: any) => e.courseId === freeCourseId || e.course?.id === freeCourseId);
+      
+      if (isAlreadyEnrolled) {
+        alert('Вы уже записаны на пробный курс!');
+        navigate('/my-courses');
+        return;
+      }
+      
+      // Записываем на бесплатный курс
+      const response = await apiClient.post('/Enrollments', { 
+        courseId: freeCourseId, 
+        studentId: user.id 
+      });
+      
+      console.log('Ответ сервера:', response.data);
+      alert('Вы успешно записаны на бесплатный вводный курс!');
+      navigate('/my-courses');
+      
+    } catch (err: any) {
+      console.error('Ошибка:', err);
+      alert(`Не удалось записаться на курс: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
   return (
     <div>
-       {/* ========== БЛОК 1 ========== */}
+      {/* ========== БЛОК 1 ========== */}
       <div style={{ 
         background: 'linear-gradient(135deg, #2f70d2 30%, #27ace0 70%, #5bb9e8 100%)',
         minHeight: '100vh',
         position: 'relative'
       }}>
-        
-   
+        <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+          {user ? (
+            <button 
+              onClick={() => navigate('/dashboard')} 
+              style={{ backgroundColor: 'white', color: '#1B4D8C', padding: '8px 24px', borderRadius: '30px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              Личный кабинет
+            </button>
+          ) : (
+            <button 
+              onClick={() => navigate('/login')} 
+              style={{ backgroundColor: 'white', color: '#1B4D8C', padding: '8px 24px', borderRadius: '30px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              Войти
+            </button>
+          )}
+        </div>
 
-       
-<div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
-  {user ? (
-    <button 
-      onClick={() => navigate('/dashboard')} 
-      style={{ backgroundColor: 'white', color: '#1B4D8C', padding: '8px 24px', borderRadius: '30px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
-    >
-      Личный кабинет
-    </button>
-  ) : (
-    <button 
-      onClick={() => navigate('/login')} 
-      style={{ backgroundColor: 'white', color: '#1B4D8C', padding: '8px 24px', borderRadius: '30px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
-    >
-      Войти
-    </button>
-  )}
-</div>
-
-        {/* Основной контент - текст и лось В ОДНОЙ СТРОКЕ */}
+        {/* Основной контент - текст и лось */}
         <div style={{ 
           minHeight: '100vh', 
           display: 'flex', 
@@ -114,7 +172,7 @@ const { user } = useAuth();
         }}>
           <div style={{ 
             display: 'flex', 
-            flexDirection: 'row',  // важно: горизонтально
+            flexDirection: 'row',
             alignItems: 'center', 
             justifyContent: 'space-between',
             width: '100%',
@@ -127,7 +185,31 @@ const { user } = useAuth();
               <h1 style={{ fontSize: '50px', fontWeight: 800, color: 'white', marginBottom: '24px' }}>
                 Изучай шведский<br /><span style={{ color: '#FECB2E' }}>легко и интересно</span>
               </h1>
-              <button onClick={onOpenAuth} style={{ backgroundColor: 'white', color: '#1B4D8C', padding: '14px 32px', borderRadius: '40px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginBottom: '40px' }}>Записаться на пробный урок</button>
+              
+              {/* Кнопка бесплатного пробного курса */}
+              <button 
+                onClick={handleFreeCourseEnroll}
+                disabled={enrolling}
+                style={{ 
+                  backgroundColor: 'white', 
+                  color: '#1B4D8C', 
+                  padding: '14px 32px', 
+                  borderRadius: '40px', 
+                  border: 'none', 
+                  fontWeight: 'bold', 
+                  cursor: enrolling ? 'not-allowed' : 'pointer', 
+                  marginBottom: '40px',
+                  opacity: enrolling ? 0.7 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!enrolling) e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                {enrolling ? 'Запись...' : '🎓 Записаться на пробный урок (бесплатно)'}
+              </button>
               
               <div style={{ display: 'flex', gap: '30px', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '30px' }}>
                 <p style={{ color: 'white' }}>Для жизни, работы и путешествий</p>
@@ -140,7 +222,6 @@ const { user } = useAuth();
             <div style={{ flex: '1', textAlign: 'center' }}>
               <img src="/images/лось.png" alt="Лось" style={{ width: '100%', maxWidth: '450px', height: 'auto' }} />
             </div>
-
           </div>
         </div>
       </div>
@@ -305,181 +386,129 @@ const { user } = useAuth();
       </div>
 
       {/* ========== БЛОК 3: Фон с узорами + две карточки ========== */}
-            <div style={{ 
-        backgroundImage: 'url(/images/узоры.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        minHeight: '100vh',
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '80px 0',
-        marginTop: '-40px',
-        borderTopLeftRadius: '60px',
-        borderTopRightRadius: '60px',
- marginBottom: '-60px' ,
-        overflow: 'hidden'
-      }}>
-        <div style={{ 
-          maxWidth: '1400px', 
-          margin: '0 auto', 
-          padding: '0 40px',
-          width: '100%',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '50px',
-            justifyContent: 'center',
-            alignItems: 'stretch'
-          }}>
-            {/* Карточка 1: Белая */}
-            <div style={{
-              flex: '1',
-              minWidth: '350px',
-              maxWidth: '550px',
-              backgroundColor: 'white',
-              borderRadius: '40px',
-              padding: '50px 40px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <h2 style={{
-                fontFamily: "'Montserrat', 'Inter', sans-serif",
-                fontWeight: 700,
-                fontSize: '32px',
-                color: '#0A2F5A',
-                marginBottom: '20px'
-              }}>
-                Экспресс-тест на уровень шведского языка
-              </h2>
-              <p style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: '18px',
-                color: '#444',
-                marginBottom: '25px',
-                lineHeight: '1.5'
-              }}>
-                Если есть сомнения какую программу выбрать, пройдите короткий бесплатный тест и узнайте свой уровень шведского языка.
-              </p>
-              <div style={{
-                display: 'inline-block',
-                backgroundColor: '#F0F0F0',
-                padding: '10px 24px',
-                borderRadius: '40px',
-                marginBottom: '40px',
-                alignSelf: 'flex-start'
-              }}>
-                <span style={{ fontSize: '18px', color: '#333' }}>📄 10-15 минут</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                <button
-                  onClick={onOpenAuth}
-                  style={{
-                    backgroundColor: '#0A2F5A',
-                    color: 'white',
-                    padding: '16px 48px',
-                    borderRadius: '50px',
-                    border: 'none',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                    width: '80%'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  Начать тест →
-                </button>
-              </div>
-            </div>
-
-            {/* Карточка 2: Темно-синяя */}
-            <div style={{
-              flex: '1',
-              minWidth: '350px',
-              maxWidth: '550px',
-              backgroundColor: '#0A2F5A',
-              borderRadius: '40px',
-              padding: '50px 40px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <p style={{
-                fontSize: '14px',
-                color: '#FFD700',
-                letterSpacing: '3px',
-                marginBottom: '15px',
-                textTransform: 'uppercase'
-              }}>
-                Слово дня
-              </p>
-              <h2 style={{
-                fontFamily: "'Montserrat', 'Inter', sans-serif",
-                fontWeight: 800,
-                fontSize: '56px',
-                color: 'white',
-                marginBottom: '30px'
-              }}>
-                Dagsmeja
-              </h2>
-              <p style={{
-                fontSize: '14px',
-                color: '#FFD700',
-                marginBottom: '15px',
-                textTransform: 'uppercase',
-                letterSpacing: '2px'
-              }}>
-                Значение
-              </p>
-              <div style={{
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                padding: '25px',
-                borderRadius: '25px',
-                marginBottom: '20px'
-              }}>
-                <p style={{
-                  fontSize: '18px',
-                  color: '#FFD700',
-                  fontStyle: 'italic',
-                  marginBottom: '12px',
-                  lineHeight: '1.4'
-                }}>
-                  tö i solskenet (trots att lufttemperaturen är under fryspunkten) || -n
-                </p>
-                <p style={{
-                  fontSize: '18px',
-                  color: 'white',
-                  lineHeight: '1.4'
-                }}>
-                  оттепель (несмотря на температуру воздуха ниже нуля)
-                </p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        {/* СКРУГЛЕНИЕ  */}
-        <div style={{
-          position: 'absolute',
-          bottom: '-30px',
-          left: 0,
-          right: 0,
-          height: '60px',
-          background: 'transparent',
-          borderTopLeftRadius: '60px',
-          borderTopRightRadius: '60px',
-           paddingTop: '60px',  
-          boxShadow: '0 -30px 0 0 white'  
-        }} />
-      </div>
+<div style={{ 
+  backgroundImage: 'url(/images/узоры.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  minHeight: '100vh',
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  padding: '80px 0',
+  marginTop: '-40px',
+  borderTopLeftRadius: '60px',
+  borderTopRightRadius: '60px',
+  marginBottom: '-60px',
+  overflow: 'hidden'
+}}>
+  <div style={{ 
+    maxWidth: '1400px', 
+    margin: '0 auto', 
+    padding: '0 40px',
+    width: '100%',
+    position: 'relative',
+    zIndex: 1
+  }}>
+    <div style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '50px',
+      justifyContent: 'center',
+      alignItems: 'stretch'
+    }}>
       
+      {/* Карточка 1: Экспресс-тест */}
+      <div style={{
+        flex: '1',
+        minWidth: '350px',
+        maxWidth: '550px',
+        backgroundColor: 'white',
+        borderRadius: '40px',
+        padding: '40px',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+      }}>
+        <QuickTest />
+      </div>
+
+      {/* Карточка 2: Слово дня (оставляем без изменений) */}
+      <div style={{
+        flex: '1',
+        minWidth: '350px',
+        maxWidth: '550px',
+        backgroundColor: '#0A2F5A',
+        borderRadius: '40px',
+        padding: '50px 40px',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <p style={{
+          fontSize: '14px',
+          color: '#FFD700',
+          letterSpacing: '3px',
+          marginBottom: '15px',
+          textTransform: 'uppercase'
+        }}>
+          Слово дня
+        </p>
+        <h2 style={{
+          fontFamily: "'Montserrat', 'Inter', sans-serif",
+          fontWeight: 800,
+          fontSize: '56px',
+          color: 'white',
+          marginBottom: '30px'
+        }}>
+          Dagsmeja
+        </h2>
+        <p style={{
+          fontSize: '14px',
+          color: '#FFD700',
+          marginBottom: '15px',
+          textTransform: 'uppercase',
+          letterSpacing: '2px'
+        }}>
+          Значение
+        </p>
+        <div style={{
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          padding: '25px',
+          borderRadius: '25px',
+          marginBottom: '20px'
+        }}>
+          <p style={{
+            fontSize: '18px',
+            color: '#FFD700',
+            fontStyle: 'italic',
+            marginBottom: '12px',
+            lineHeight: '1.4'
+          }}>
+            tö i solskenet (trots att lufttemperaturen är under fryspunkten) || -n
+          </p>
+          <p style={{
+            fontSize: '18px',
+            color: 'white',
+            lineHeight: '1.4'
+          }}>
+            оттепель (несмотря на температуру воздуха ниже нуля)
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style={{
+    position: 'absolute',
+    bottom: '-30px',
+    left: 0,
+    right: 0,
+    height: '60px',
+    background: 'transparent',
+    borderTopLeftRadius: '60px',
+    borderTopRightRadius: '60px',
+    paddingTop: '60px',
+    boxShadow: '0 -30px 0 0 white'
+  }} />
+</div>
 
       {/* ========== БЛОК 4: Популярные курсы ========== */}
       <div style={{ 
@@ -517,7 +546,7 @@ const { user } = useAuth();
             gap: '40px',
             justifyContent: 'center'
           }}>
-            {/* Карточка 1 */}
+            {/* Карточка 1 - Для начинающих (ID: 5) */}
             <div style={{
               flex: '1',
               minWidth: '300px',
@@ -580,7 +609,7 @@ const { user } = useAuth();
                 </div>
                 
                 <button
-                  onClick={onOpenAuth}
+                  onClick={() => handlePaidCourseEnroll(5)}
                   style={{
                     width: '100%',
                     backgroundColor: '#2f70d2',
@@ -598,7 +627,7 @@ const { user } = useAuth();
               </div>
             </div>
 
-            {/* Карточка 2 с хитом */}
+            {/* Карточка 2 - Разговорный шведский (ID: 6) */}
             <div style={{
               flex: '1',
               minWidth: '300px',
@@ -610,7 +639,6 @@ const { user } = useAuth();
               position: 'relative',
               transform: 'scale(1.02)'
             }}>
-              {/* Плашка "Хит" обволакивает верх */}
               <div style={{
                 position: 'absolute',
                 top: '0',
@@ -618,7 +646,7 @@ const { user } = useAuth();
                 transform: 'translateX(-50%)',
                 backgroundColor: '#FFD700',
                 padding: '8px 24px',
-                borderRadius: '0 0 20px 20px',  // скругление только снизу
+                borderRadius: '0 0 20px 20px',
                 zIndex: 10,
                 fontWeight: 'bold',
                 color: '#0A2F5A',
@@ -682,7 +710,7 @@ const { user } = useAuth();
                 </div>
                 
                 <button
-                  onClick={onOpenAuth}
+                  onClick={() => handlePaidCourseEnroll(6)}
                   style={{
                     width: '100%',
                     backgroundColor: '#2f70d2',
@@ -700,7 +728,7 @@ const { user } = useAuth();
               </div>
             </div>
 
-            {/* Карточка 3 */}
+            {/* Карточка 3 - Шведский для работы (ID: 13) */}
             <div style={{
               flex: '1',
               minWidth: '300px',
@@ -764,7 +792,7 @@ const { user } = useAuth();
                 </div>
                 
                 <button
-                  onClick={onOpenAuth}
+                  onClick={() => handlePaidCourseEnroll(13)}
                   style={{
                     width: '100%',
                     backgroundColor: '#2f70d2',
@@ -785,14 +813,13 @@ const { user } = useAuth();
         </div>
       </div>
 
-           {/* ========== БЛОК 5: Часто задаваемые вопросы ========== */}
-      {/* Светло-синий блок со скруглением внизу */}
+      {/* ========== БЛОК 5: Часто задаваемые вопросы ========== */}
       <div style={{ 
         backgroundColor: '#e8f0fe',
         padding: '80px 0 0 0',
         borderBottomLeftRadius: '60px',
         borderBottomRightRadius: '60px',
-        borderTopLeftRadius: '60px',    // ← ДОБАВЬ ЭТО
+        borderTopLeftRadius: '60px',
         borderTopRightRadius: '60px',
         position: 'relative',
         zIndex: 2
@@ -846,7 +873,7 @@ const { user } = useAuth();
         background: 'linear-gradient(135deg, #2f70d2 30%, #27ace0 70%, #5bb9e8 100%)',
         padding: '40px 0 40px 0',
         textAlign: 'center',
-        marginTop: '-60px',  // поднимаем вверх, чтобы перекрыть скругление
+        marginTop: '-60px',
         position: 'relative',
         zIndex: 1
       }}>

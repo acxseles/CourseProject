@@ -892,7 +892,6 @@ using (var scope = app.Services.CreateScope())
 Log.Information("School Swedish API запущено!");
 Log.Information("База данных: {Connection}", builder.Configuration.GetConnectionString("DefaultConnection"));
 Log.Information("Environment: {Environment}", app.Environment.EnvironmentName);
-
 //app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 

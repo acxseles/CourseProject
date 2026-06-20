@@ -179,21 +179,18 @@ export const UsersManagementPage = () => {
           overflow: 'auto',
           boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
         }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
             <thead style={{ backgroundColor: '#e8f0fe', borderBottom: '1px solid #ddd' }}>
               <tr>
-                <th style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 'bold', color: '#0A2F5A' }}>ID</th>
                 <th style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 'bold', color: '#0A2F5A' }}>Имя</th>
                 <th style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 'bold', color: '#0A2F5A' }}>Email</th>
                 <th style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 'bold', color: '#0A2F5A' }}>Роль</th>
-                <th style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 'bold', color: '#0A2F5A' }}>Статус</th>
                 <th style={{ padding: '16px 20px', textAlign: 'left', fontWeight: 'bold', color: '#0A2F5A' }}>Действия</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.map((u, index) => (
                 <tr key={u.id} style={{ borderBottom: index === filteredUsers.length - 1 ? 'none' : '1px solid #eee' }}>
-                  <td style={{ padding: '16px 20px', color: '#666' }}>{u.id}</td>
                   <td style={{ padding: '16px 20px', fontWeight: '500' }}>{u.firstName} {u.lastName}</td>
                   <td style={{ padding: '16px 20px', color: '#666' }}>{u.email}</td>
                   <td style={{ padding: '16px 20px' }}>
@@ -206,18 +203,6 @@ export const UsersManagementPage = () => {
                       fontWeight: 'bold'
                     }}>
                       {getRoleName(u.role)}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <span style={{
-                      backgroundColor: u.isActive ? '#4caf5020' : '#f4433620',
-                      color: u.isActive ? '#4caf50' : '#f44336',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {u.isActive ? 'Активен' : 'Заблокирован'}
                     </span>
                   </td>
                   <td style={{ padding: '16px 20px' }}>

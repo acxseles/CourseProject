@@ -13,6 +13,8 @@ public partial class Question
 
     public string QuestionType { get; set; } = null!;
 
+    public string? ExpectedAnswer { get; set; } // Ожидаемый ответ для письменного вопроса
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual ICollection<Answer> Answers { get; set; } = new List<Answer>();

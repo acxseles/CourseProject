@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { apiClient } from '../../shared/api/client';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 interface Lesson {
   id: number;
@@ -46,6 +47,19 @@ export const CourseLessonsPage = () => {
         }
         setLessons(lessonsList);
         
+        // Получаем прогресс студента
+        if (user?.role === 'Student') {
+          try {
+            const progressRes = await apiClient.get(`/courses/${courseId}/progress`);
+            const completed = progressRes.data?.completedLessonIds || [];
+            setCompletedLessons(completed);
+            const progressPercent = progressRes.data?.progress || 0;
+            setProgress(progressPercent);
+          } catch (err) {
+            console.log('Прогресс пока не доступен');
+          }
+        }
+        
       } catch (err) {
         console.error('Ошибка:', err);
       } finally {
@@ -53,31 +67,17 @@ export const CourseLessonsPage = () => {
       }
     };
     fetchData();
-  }, [courseId]);
-
-  const completeLesson = async (lessonId: number) => {
-    try {
-      await apiClient.post(`/lessons/${lessonId}/complete`);
-      const newCompleted = [...completedLessons, lessonId];
-      setCompletedLessons(newCompleted);
-      const newProgress = Math.round((newCompleted.length / lessons.length) * 100);
-      setProgress(newProgress);
-      alert('Урок завершён!');
-    } catch (err) {
-      console.error('Ошибка:', err);
-      alert('Не удалось завершить урок');
-    }
-  };
+  }, [courseId, user]);
 
   const handleDeleteLesson = async (lessonId: number) => {
-    if (!confirm('Удалить этот урок? Все тесты тоже удалятся.')) return;
+    if (!window.confirm('Удалить этот урок? Все тесты тоже удалятся.')) return;
     try {
       await apiClient.delete(`/courses/${courseId}/lessons/${lessonId}`);
       setLessons(lessons.filter(l => l.id !== lessonId));
-      alert('Урок удалён');
+      toast.success('Урок удалён');
     } catch (err) {
       console.error('Ошибка:', err);
-      alert('Не удалось удалить урок');
+      toast.error('Не удалось удалить урок');
     }
   };
 
@@ -161,7 +161,59 @@ export const CourseLessonsPage = () => {
           </div>
         </div>
 
-        {/* Кнопка создания урока */}
+        {/* Информация о последовательном прохождении */}
+        {user?.role === 'Student' && (
+          <div style={{
+            backgroundColor: '#e8f0fe',
+            padding: '12px 20px',
+            borderRadius: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <span>🔒</span>
+            <span style={{ fontSize: '14px', color: '#0A2F5A' }}>
+              Уроки открываются последовательно. Пройдите тест каждого урока (минимум 60%), чтобы перейти к следующему.
+            </span>
+          </div>
+        )}
+
+        {/* Кнопка просмотра студентов (для учителя/админа) */}
+        {(user?.role === 'Teacher' || user?.role === 'Admin') && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '32px' }}>
+            <Link to={`/course/${courseId}/students`}>
+              <button style={{
+                padding: '10px 24px',
+                backgroundColor: '#e8f0fe',
+                color: '#2f70d2',
+                border: 'none',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}>
+                👥 Студенты курса
+              </button>
+            </Link>
+            <Link to={`/course/${courseId}/lesson/new`}>
+              <button style={{
+                padding: '10px 24px',
+                background: 'linear-gradient(135deg, #2f70d2 0%, #27ace0 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '14px'
+              }}>
+                + Добавить урок
+              </button>
+            </Link>
+          </div>
+        )}
+
+        {/* Кнопка создания урока только для учителя/админа (если нет кнопки студентов) */}
         {(user?.role === 'Teacher' || user?.role === 'Admin') && (
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <Link to={`/course/${courseId}/lesson/new`}>
@@ -238,8 +290,14 @@ export const CourseLessonsPage = () => {
               return (
                 <div key={lesson.id}>
                   <Link 
-                    to={`/course/${courseId}/lesson/${lesson.id}`}
-                    style={{ textDecoration: 'none' }}
+                    to={isLocked ? '#' : `/course/${courseId}/lesson/${lesson.id}`}
+                    style={{ textDecoration: 'none', cursor: isLocked ? 'default' : 'pointer' }}
+                    onClick={(e) => {
+                      if (isLocked) {
+                        e.preventDefault();
+                        toast.error('Сначала завершите предыдущий урок');
+                      }
+                    }}
                   >
                     <div style={{
                       display: 'flex',
@@ -251,7 +309,7 @@ export const CourseLessonsPage = () => {
                       boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
                       opacity: isLocked ? 0.6 : 1,
                       transition: 'transform 0.2s, box-shadow 0.2s',
-                      cursor: user ? 'pointer' : 'default'
+                      cursor: isLocked ? 'default' : 'pointer'
                     }}
                     onMouseEnter={(e) => {
                       if (!isLocked && user) {
@@ -296,30 +354,14 @@ export const CourseLessonsPage = () => {
                         )}
                       </div>
 
-                      {/* Кнопка завершения */}
-                      {user?.role === 'Student' && !isCompleted && !isLocked && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            completeLesson(lesson.id);
-                          }}
-                          style={{
-                            padding: '8px 20px',
-                            backgroundColor: '#4caf50',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '30px',
-                            cursor: 'pointer',
-                            fontSize: '13px',
-                            fontWeight: 'bold'
-                          }}
-                        >
-                          Завершить урок
-                        </button>
+                      {/* Отображение статуса */}
+                      {isCompleted ? (
+                        <div style={{ color: '#4caf50', fontSize: '14px', fontWeight: 'bold' }}>✅ Пройден</div>
+                      ) : isLocked ? (
+                        <div style={{ color: '#999', fontSize: '20px' }}>🔒</div>
+                      ) : lesson.videoUrl && (
+                        <div style={{ color: '#2f70d2', fontSize: '20px' }}>🎥</div>
                       )}
-                      
-                      {isLocked && <div style={{ color: '#999', fontSize: '20px' }}>🔒</div>}
-                      {lesson.videoUrl && !isLocked && <div style={{ color: '#2f70d2', fontSize: '20px' }}>🎥</div>}
                     </div>
                   </Link>
 

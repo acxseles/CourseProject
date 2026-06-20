@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolSwedishAPI.Data;
 using SchoolSwedishAPI.DTOs;
 using SchoolSwedishAPI.Models;
+using System.Security.Claims;
 
 namespace SchoolSwedishAPI.Controllers;
 
@@ -31,7 +33,7 @@ public class EnrollmentsController : ControllerBase
                 Id = e.Id,
                 CourseId = e.CourseId,
                 StudentId = e.StudentId,
-                EnrollmentDate = e.EnrolledAt ?? DateTime.UtcNow, // ИСПРАВЛЕНО
+                EnrollmentDate = e.EnrolledAt ?? DateTime.UtcNow,
                 Status = e.Status,
                 StudentName = e.Student.FirstName + " " + e.Student.LastName,
                 CourseTitle = e.Course.Title
@@ -54,7 +56,7 @@ public class EnrollmentsController : ControllerBase
                 Id = e.Id,
                 CourseId = e.CourseId,
                 StudentId = e.StudentId,
-                EnrollmentDate = e.EnrolledAt ?? DateTime.UtcNow, // ИСПРАВЛЕНО
+                EnrollmentDate = e.EnrolledAt ?? DateTime.UtcNow,
                 Status = e.Status,
                 StudentName = e.Student.FirstName + " " + e.Student.LastName,
                 CourseTitle = e.Course.Title
@@ -77,7 +79,7 @@ public class EnrollmentsController : ControllerBase
                 Id = e.Id,
                 CourseId = e.CourseId,
                 StudentId = e.StudentId,
-                EnrollmentDate = e.EnrolledAt ?? DateTime.UtcNow, // ИСПРАВЛЕНО
+                EnrollmentDate = e.EnrolledAt ?? DateTime.UtcNow,
                 Status = e.Status,
                 StudentName = e.Student.FirstName + " " + e.Student.LastName,
                 CourseTitle = e.Course.Title
@@ -96,7 +98,6 @@ public class EnrollmentsController : ControllerBase
             _logger.LogInformation("Начало записи студента {StudentId} на курс {CourseId}",
                 createEnrollmentDto.StudentId, createEnrollmentDto.CourseId);
 
-            // Проверяем существует ли курс
             var course = await _context.Courses
                 .FirstOrDefaultAsync(c => c.Id == createEnrollmentDto.CourseId);
 
@@ -105,9 +106,7 @@ public class EnrollmentsController : ControllerBase
                 _logger.LogWarning("Курс {CourseId} не найден", createEnrollmentDto.CourseId);
                 return NotFound(new { message = "Курс не найден" });
             }
-            _logger.LogInformation("Курс найден: {Title}", course.Title);
 
-            // Проверяем существует ли студент
             var student = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == createEnrollmentDto.StudentId);
 
@@ -116,9 +115,7 @@ public class EnrollmentsController : ControllerBase
                 _logger.LogWarning("Студент {StudentId} не найден", createEnrollmentDto.StudentId);
                 return NotFound(new { message = "Студент не найден" });
             }
-            _logger.LogInformation("Студент найден: {Name}", student.FirstName + " " + student.LastName);
 
-            // Проверяем не записан ли уже студент на этот курс
             var existingEnrollment = await _context.Enrollments
                 .FirstOrDefaultAsync(e => e.StudentId == createEnrollmentDto.StudentId &&
                                          e.CourseId == createEnrollmentDto.CourseId);
@@ -130,12 +127,8 @@ public class EnrollmentsController : ControllerBase
                 return BadRequest(new { message = "Студент уже записан на этот курс" });
             }
 
-            // Проверяем есть ли свободные места на курсе
             var currentEnrollmentsCount = await _context.Enrollments
-                .CountAsync(e => e.CourseId == createEnrollmentDto.CourseId && e.Status == "Active"); // Только активные
-
-            _logger.LogInformation("Текущее количество записей на курс: {Count}, максимум: {Max}",
-                currentEnrollmentsCount, course.MaxStudents);
+                .CountAsync(e => e.CourseId == createEnrollmentDto.CourseId && e.Status == "Active");
 
             if (course.MaxStudents.HasValue && currentEnrollmentsCount >= course.MaxStudents.Value)
             {
@@ -143,7 +136,6 @@ public class EnrollmentsController : ControllerBase
                 return BadRequest(new { message = "На курсе нет свободных мест" });
             }
 
-            // Создаем запись на курс
             var enrollment = new Enrollment
             {
                 CourseId = createEnrollmentDto.CourseId,
@@ -154,16 +146,9 @@ public class EnrollmentsController : ControllerBase
                 Grade = null
             };
 
-            _logger.LogInformation("Создана новая запись: CourseId={CourseId}, StudentId={StudentId}",
-                enrollment.CourseId, enrollment.StudentId);
-
             _context.Enrollments.Add(enrollment);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Студент {StudentId} успешно записан на курс {CourseId}. ID записи: {EnrollmentId}",
-                createEnrollmentDto.StudentId, createEnrollmentDto.CourseId, enrollment.Id);
-
-            // Возвращаем созданную запись с дополнительной информацией
             var result = await _context.Enrollments
                 .Include(e => e.Student)
                 .Include(e => e.Course)
@@ -186,13 +171,10 @@ public class EnrollmentsController : ControllerBase
         {
             var innerException = ex.InnerException;
             var innerMessage = innerException?.Message ?? "Нет внутренней ошибки";
-            var fullError = $"Внешняя: {ex.Message}, Внутренняя: {innerMessage}";
-
-            _logger.LogError(ex, "Ошибка при записи студента на курс. Полная ошибка: {FullError}", fullError);
+            _logger.LogError(ex, "Ошибка при записи студента на курс");
             return StatusCode(500, new { message = $"Ошибка при записи на курс: {innerMessage}" });
         }
     }
-
 
     // DELETE: api/enrollments/5
     [HttpDelete("{id}")]
@@ -210,7 +192,6 @@ public class EnrollmentsController : ControllerBase
                 return NotFound(new { message = "Запись на курс не найдена" });
             }
 
-            // Меняем статус на Dropped вместо удаления
             enrollment.Status = "Dropped";
             await _context.SaveChangesAsync();
 
@@ -223,9 +204,86 @@ public class EnrollmentsController : ControllerBase
             _logger.LogError(ex, "Ошибка при отмене записи на курс {EnrollmentId}", id);
             return StatusCode(500, new { message = "Ошибка при отмене записи" });
         }
+    }
 
-        
+    // Получить всех студентов на курсе (для учителя/админа)
+    [HttpGet("course/{courseId}/students")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> GetCourseStudents(int courseId)
+    {
+        try
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Проверяем, что учитель ведёт этот курс
+            if (userRole == "Teacher")
+            {
+                var course = await _context.Courses.FindAsync(courseId);
+                if (course == null || course.TeacherId != userId)
+                    return Forbid();
+            }
+
+            // Получаем ВСЕХ студентов на курсе (не только Active)
+            var students = await _context.Enrollments
+                .Include(e => e.Student)
+                .Where(e => e.CourseId == courseId)  // Убираем фильтр по статусу
+                .Select(e => new
+                {
+                    e.Id,
+                    e.StudentId,
+                    e.Student.FirstName,
+                    e.Student.LastName,
+                    e.Student.Email,
+                    e.Progress,
+                    e.EnrolledAt,
+                    e.Status
+                })
+                .ToListAsync();
+
+            Console.WriteLine($"Найдено студентов на курсе {courseId}: {students.Count}");
+
+            return Ok(students);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
+    // Удалить студента с курса (только для админа) - альтернативный вариант
+    [HttpDelete("enrollment/{enrollmentId}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> RemoveStudentFromCourse(int enrollmentId)
+    {
+        try
+        {
+            var enrollment = await _context.Enrollments.FindAsync(enrollmentId);
+            if (enrollment == null)
+                return NotFound(new { message = "Запись не найдена" });
+
+            // Удаляем связанные платежи вручную
+            var payments = await _context.Payments
+                .Where(p => p.EnrollmentId == enrollmentId)
+                .ToListAsync();
+
+            if (payments.Any())
+            {
+                _context.Payments.RemoveRange(payments);
+                await _context.SaveChangesAsync();
+            }
+
+            // Удаляем запись о зачислении
+            _context.Enrollments.Remove(enrollment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Студент удалён с курса" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка удаления: {ex.Message}");
+            return StatusCode(500, new { message = ex.Message });
+        }
     }
 }
-  
-     

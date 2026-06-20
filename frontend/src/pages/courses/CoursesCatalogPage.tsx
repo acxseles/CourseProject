@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { apiClient } from '../../shared/api/client';
 import { enrollmentsApi } from '../../shared/api/enrollments';
+import toast from 'react-hot-toast';
+import { AgreementModal } from '../../components/AgreementModal';
 
 interface Course {
   id: number;
@@ -21,6 +23,9 @@ export const CoursesCatalogPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [enrollingCourseId, setEnrollingCourseId] = useState<number | null>(null);
+  
+  // Состояние для модального окна соглашения
+  const [selectedCourseForPayment, setSelectedCourseForPayment] = useState<{ id: number; title: string; price: number } | null>(null);
 
   // Загрузка записанных курсов
   useEffect(() => {
@@ -57,6 +62,21 @@ export const CoursesCatalogPage = () => {
       });
   }, []);
 
+ const handlePaymentClick = (courseId: number, courseTitle: string, coursePrice: number) => {
+  console.log('handlePaymentClick вызван', { courseId, courseTitle, coursePrice });
+  setSelectedCourseForPayment({ id: courseId, title: courseTitle, price: coursePrice });
+};
+
+// Добавь в компонент, чтобы проверить, меняется ли состояние
+console.log('selectedCourseForPayment:', selectedCourseForPayment);
+
+const handleConfirmPayment = async () => {
+  if (selectedCourseForPayment) {
+    await handleEnrollWithPayment(selectedCourseForPayment.id);
+    setSelectedCourseForPayment(null);
+  }
+};
+
   const handleEnrollWithPayment = async (courseId: number) => {
     try {
       setEnrollingCourseId(courseId);
@@ -64,22 +84,23 @@ export const CoursesCatalogPage = () => {
       
       if (result.paymentUrl) {
         window.open(result.paymentUrl, '_blank');
+        toast.success('Вы перенаправлены на страницу оплаты');
       } else {
-        alert('Ошибка: не получена ссылка на оплату');
+        toast.error('Ошибка: не получена ссылка на оплату');
       }
       
       const checkInterval = setInterval(async () => {
         const status = await enrollmentsApi.checkPaymentStatus(result.enrollmentId);
         if (status.isPaid) {
           clearInterval(checkInterval);
-          alert('Оплата прошла успешно! Курс добавлен в "Мои курсы".');
+          toast.success('Оплата прошла успешно! Курс добавлен в "Мои курсы".');
           window.location.reload();
         }
       }, 3000);
       
     } catch (err) {
       console.error('Ошибка:', err);
-      alert('Ошибка при создании платежа');
+      toast.error('Ошибка при создании платежа');
     } finally {
       setEnrollingCourseId(null);
     }
@@ -320,7 +341,7 @@ export const CoursesCatalogPage = () => {
                       </div>
                     ) : (
                       <button 
-                        onClick={() => handleEnrollWithPayment(course.id)}
+                        onClick={() => handlePaymentClick(course.id, course.title, course.price)}
                         disabled={enrollingCourseId === course.id}
                         style={{
                           width: '100%',
@@ -370,6 +391,15 @@ export const CoursesCatalogPage = () => {
           </div>
         )}
       </div>
+
+      {/* Модальное окно соглашения */}
+      <AgreementModal
+        isOpen={!!selectedCourseForPayment}
+        onClose={() => setSelectedCourseForPayment(null)}
+        onAgree={handleConfirmPayment}
+        courseTitle={selectedCourseForPayment?.title || ''}
+        coursePrice={selectedCourseForPayment?.price || 0}
+      />
 
       <style>{`
         @keyframes pulse {

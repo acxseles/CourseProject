@@ -5,6 +5,7 @@ using SchoolSwedishAPI.Data;
 using SchoolSwedishAPI.DTOs;
 using SchoolSwedishAPI.Models;
 using Serilog;
+using System.Security.Claims;
 
 namespace SchoolSwedishAPI.Controllers
 {
@@ -99,22 +100,22 @@ namespace SchoolSwedishAPI.Controllers
                     return NotFound(new { message = "Тест не найден" });
                 }
 
-                var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-                if (userRole == "Student")
-                {
-                    var existingSubmission = await _context.Studentassignments
-                        .FirstOrDefaultAsync(sa => sa.StudentId == userId && sa.AssignmentId == assignment.Id);
+                //var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                //if (userRole == "Student")
+                //{
+                //    var existingSubmission = await _context.Studentassignments
+                //        .FirstOrDefaultAsync(sa => sa.StudentId == userId && sa.AssignmentId == assignment.Id);
 
-                    if (existingSubmission != null)
-                    {
-                        _logger.LogInformation("📝 Студент уже сдавал этот тест, результат: {Score}", existingSubmission.Score);
-                        return BadRequest(new
-                        {
-                            message = "Вы уже сдавали этот тест",
-                            score = existingSubmission.Score
-                        });
-                    }
-                }
+                //    if (existingSubmission != null)
+                //    {
+                //        _logger.LogInformation("📝 Студент уже сдавал этот тест, результат: {Score}", existingSubmission.Score);
+                //        return BadRequest(new
+                //        {
+                //            message = "Вы уже сдавали этот тест",
+                //            score = existingSubmission.Score
+                //        });
+                //    }
+                //}
 
                 var result = new TestDto
                 {
@@ -340,12 +341,10 @@ namespace SchoolSwedishAPI.Controllers
         {
             try
             {
-                if (!int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int studentId))
+                if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out int studentId))
                 {
                     return Unauthorized(new { message = "Пользователь не авторизован" });
                 }
-
-                _logger.LogInformation("📤 Студент {StudentId} сдает тест {AssignmentId}", studentId, assignmentId);
 
                 var assignment = await _context.Assignments
                     .Include(a => a.Questions)
@@ -360,27 +359,46 @@ namespace SchoolSwedishAPI.Controllers
                 var existingSubmission = await _context.Studentassignments
                     .FirstOrDefaultAsync(sa => sa.StudentId == studentId && sa.AssignmentId == assignmentId);
 
-                if (existingSubmission != null)
-                {
-                    return BadRequest(new { message = "Вы уже сдавали этот тест" });
-                }
-
                 int correctAnswers = 0;
                 int totalQuestions = assignment.Questions.Count;
 
                 foreach (var question in assignment.Questions)
                 {
-                    var submittedAnswer = submitDto.Answers
-                        .FirstOrDefault(a => a.QuestionId == question.Id);
-
-                    if (submittedAnswer != null)
+                    if (question.QuestionType == "MultipleChoice")
                     {
-                        var correctAnswer = question.Answers.FirstOrDefault(a => a.IsCorrect == true);
+                        // Проверка вариантного ответа
+                        var submittedAnswer = submitDto.Answers
+                            .FirstOrDefault(a => a.QuestionId == question.Id);
 
-                        if (correctAnswer != null &&
-                            submittedAnswer.SelectedAnswer.Trim().ToLower() == correctAnswer.Text.Trim().ToLower())
+                        if (submittedAnswer != null)
                         {
-                            correctAnswers++;
+                            var correctAnswer = question.Answers.FirstOrDefault(a => a.IsCorrect == true);
+                            if (correctAnswer != null &&
+                                submittedAnswer.SelectedAnswer.Trim().ToLower() == correctAnswer.Text.Trim().ToLower())
+                            {
+                                correctAnswers++;
+                            }
+                        }
+                    }
+                    else if (question.QuestionType == "Written")
+                    {
+                        // Проверка письменного ответа (не строгая валидация)
+                        var submittedAnswer = submitDto.Answers
+                            .FirstOrDefault(a => a.QuestionId == question.Id);
+
+                        if (submittedAnswer != null && !string.IsNullOrWhiteSpace(submittedAnswer.SelectedAnswer))
+                        {
+                            // Здесь можно добавить логику нестрогой проверки
+                            // Например, проверка ключевых слов
+                            var userAnswer = submittedAnswer.SelectedAnswer.Trim().ToLower();
+                            var expectedAnswer = question.ExpectedAnswer?.Trim().ToLower() ?? "";
+
+                            // Простая проверка: если ответ не пустой, засчитываем
+                            // Или проверка на наличие ключевых слов
+                            if (!string.IsNullOrEmpty(userAnswer) && userAnswer.Length > 3)
+                            {
+                                correctAnswers++;
+                            }
                         }
                     }
                 }
@@ -388,15 +406,24 @@ namespace SchoolSwedishAPI.Controllers
                 double scorePercentage = totalQuestions > 0 ? (correctAnswers * 100.0) / totalQuestions : 0;
                 int score = (int)Math.Round(scorePercentage);
 
-                var studentAssignment = new Studentassignment
+                if (existingSubmission != null)
                 {
-                    StudentId = studentId,
-                    AssignmentId = assignmentId,
-                    Score = score,
-                    SubmittedAt = DateTime.UtcNow
-                };
+                    existingSubmission.Score = score;
+                    existingSubmission.SubmittedAt = DateTime.UtcNow;
+                    _context.Studentassignments.Update(existingSubmission);
+                }
+                else
+                {
+                    var studentAssignment = new Studentassignment
+                    {
+                        StudentId = studentId,
+                        AssignmentId = assignmentId,
+                        Score = score,
+                        SubmittedAt = DateTime.UtcNow
+                    };
+                    _context.Studentassignments.Add(studentAssignment);
+                }
 
-                _context.Studentassignments.Add(studentAssignment);
                 await _context.SaveChangesAsync();
 
                 var result = new TestResultDto
@@ -408,13 +435,11 @@ namespace SchoolSwedishAPI.Controllers
                     TotalQuestions = totalQuestions
                 };
 
-                _logger.LogInformation("✅ Тест сдан: {Score}% правильных ответов", scorePercentage);
-
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "💥 Ошибка при сдаче теста {AssignmentId}", assignmentId);
+                _logger.LogError(ex, "Ошибка при сдаче теста");
                 return StatusCode(500, new { message = "Ошибка при сдаче теста" });
             }
         }

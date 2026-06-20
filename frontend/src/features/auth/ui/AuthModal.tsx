@@ -15,10 +15,46 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { login, register, isLoading } = useAuth();
+
+  // Проверка пароля
+  const validatePassword = (pwd: string) => {
+    if (pwd.length < 6) {
+      return 'Пароль должен быть минимум 6 символов';
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      return 'Пароль должен содержать хотя бы одну заглавную букву';
+    }
+    if (!/[a-z]/.test(pwd)) {
+      return 'Пароль должен содержать хотя бы одну строчную букву';
+    }
+    if (!/[0-9]/.test(pwd)) {
+      return 'Пароль должен содержать хотя бы одну цифру';
+    }
+    return '';
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (!isLogin) {
+      setPasswordError(validatePassword(newPassword));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Проверка пароля при регистрации
+    if (!isLogin) {
+      const error = validatePassword(password);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+    }
+    
     try {
       if (isLogin) {
         await login({ email, password });
@@ -28,11 +64,11 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         toast.success('Регистрация успешна!');
       }
       onClose();
-      // Очищаем форму
       setEmail('');
       setPassword('');
       setFirstName('');
       setLastName('');
+      setPasswordError('');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Ошибка');
     }
@@ -65,19 +101,16 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
-                {/* Кнопка закрытия */}
                 <div className="flex justify-end">
                   <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                     <XMarkIcon className="w-6 h-6" />
                   </button>
                 </div>
 
-                {/* Заголовок */}
                 <Dialog.Title className="text-2xl font-bold text-center text-gray-900 mb-6">
                   {isLogin ? 'Вход в аккаунт' : 'Создать аккаунт'}
                 </Dialog.Title>
 
-                {/* Форма */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {!isLogin && (
                     <>
@@ -109,28 +142,43 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                     required
                   />
 
-                  <input
-                    type="password"
-                    placeholder="Пароль"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <div>
+                    <input
+                      type="password"
+                      placeholder="Пароль"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
+                        passwordError && !isLogin ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      value={password}
+                      onChange={handlePasswordChange}
+                      required
+                    />
+                    {passwordError && !isLogin && (
+                      <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+                    )}
+                    {!isLogin && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        Пароль должен содержать минимум 6 символов, заглавную букву, строчную букву и цифру
+                      </p>
+                    )}
+                  </div>
 
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || (!isLogin && !!passwordError)}
                     className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                   >
                     {isLoading ? 'Загрузка...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
                   </button>
                 </form>
 
-                {/* Переключение между входом и регистрацией */}
                 <div className="mt-4 text-center">
                   <button
-                    onClick={() => setIsLogin(!isLogin)}
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setPasswordError('');
+                      setPassword('');
+                    }}
                     className="text-sm text-blue-600 hover:underline"
                   >
                     {isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Уже есть аккаунт? Войти'}
