@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // <-- ИСПРАВЛЕНО: Добавили useEffect
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../features/auth/model/authStore';
 import { useAuth } from '../../features/auth/hooks/useAuth';
-
 
 export const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,9 +10,9 @@ export const LoginPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
-  // Берем isAuthenticated (или user) из стора или хука, 
-  // чтобы отслеживать реальный статус авторизации
-  const { login, register, isAuthenticated } = useAuthStore();
+  // ИСПРАВЛЕНО: Добавили isLoading из Zustand стора (если он там есть)
+  // Если в сторе его нет, замените на локальный стейт: const [isLoading, setIsLoading] = useState(false);
+  const { login, register, isAuthenticated, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   // Эффект для надежного редиректа сразу после того, как стейт обновился
@@ -31,11 +30,6 @@ export const LoginPage = () => {
       } else {
         await register({ email, password, firstName, lastName });
       }
-
-      // Если ваш zustand/redux стор НЕ обновляет isAuthenticated автоматически при 204,
-      // возможно, вам нужно вручную вызвать метод валидации токена здесь, например:
-      // await checkAuth(); 
-
     } catch (error) {
       console.error('Ошибка при авторизации:', error);
     }
