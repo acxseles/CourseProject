@@ -19,23 +19,24 @@ import { ImportExportPage } from './pages/admin/ImportExportPage';
 import { CourseStudentsPage } from './pages/courses/CourseStudentsPage';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuthStore();
+  const { user, isCheckingAuth } = useAuthStore();
   
-  if (isLoading) {
+  if (isCheckingAuth) {
     return <div style={{ textAlign: 'center', padding: '50px' }}>Загрузка...</div>;
   }
   
   return user ? children : <Navigate to="/login" />;
 };
 
+
 function App() {
-  const { checkAuth, isLoading } = useAuthStore();
+  const { checkAuth, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, []);
 
-  if (isLoading) {
+ if (isCheckingAuth) {
     return <div style={{ textAlign: 'center', padding: '50px' }}>Загрузка...</div>;
   }
 

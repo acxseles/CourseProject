@@ -9,42 +9,35 @@ interface User {
   role: string;
 }
 
-interface LoginData {
-  email: string;
-  password: string;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role?: 'Student' | 'Teacher';
-}
-
 interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  isCheckingAuth: boolean; // ← добавить
+  login: (data: { email: string; password: string }) => Promise<void>;
+  register: (data: any) => Promise<void>;
   logout: () => void;
-  checkAuth: () => void;
+  checkAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isLoading: true,
+  isLoading: false,
+  isCheckingAuth: true, // ← начинаем с true
   error: null,
 
   login: async (data) => {
     set({ isLoading: true, error: null });
     try {
       const response = await apiClient.post('/auth/login', data);
+      console.log('✅ Логин успешен:', response.data);
+      
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      set({ user: response.data.user, isLoading: false });
+      
+      set({ user: response.data.user, isLoading: false, isCheckingAuth: false });
     } catch (error: any) {
+      console.error('❌ Ошибка логина:', error);
       set({ error: error.response?.data?.message || 'Ошибка входа', isLoading: false });
       throw error;
     }
@@ -56,7 +49,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const response = await apiClient.post('/auth/register', data);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      set({ user: response.data.user, isLoading: false });
+      set({ user: response.data.user, isLoading: false, isCheckingAuth: false });
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Ошибка регистрации', isLoading: false });
       throw error;
@@ -66,22 +59,29 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    set({ user: null, error: null });
+    set({ user: null, error: null, isCheckingAuth: false });
   },
 
-  checkAuth: () => {
+  checkAuth: async () => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
+    
+    console.log('🔍 checkAuth вызван, token:', !!token, 'userStr:', !!userStr);
     
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
-        set({ user, isLoading: false });
+        console.log('✅ Пользователь восстановлен:', user);
+        set({ user, isLoading: false, isCheckingAuth: false });
       } catch (error) {
-        set({ user: null, isLoading: false });
+        console.error('❌ Ошибка парсинга user:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        set({ user: null, isLoading: false, isCheckingAuth: false });
       }
     } else {
-      set({ user: null, isLoading: false });
+      console.log('🔓 Пользователь не авторизован');
+      set({ user: null, isLoading: false, isCheckingAuth: false });
     }
   },
 }));

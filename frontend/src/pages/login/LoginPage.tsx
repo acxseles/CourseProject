@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../features/auth/model/authStore';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 
 
@@ -9,7 +10,7 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const { login, register, isLoading } = useAuth();
+  const { login, register, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {

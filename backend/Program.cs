@@ -26,6 +26,17 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowMyFrontend", policy =>
+    {
+	 policy.SetIsOriginAllowed(origin => true) // Разрешает любой origin
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials(); // Обязательно для работы SignalR на сервере
+    });
+});
+
 // Add FluentValidation validators (suppress obsolete warning - v11.3.1 still works)
 #pragma warning disable CS0618
 builder.Services.AddControllers()
@@ -120,17 +131,6 @@ builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<PdfExportService>();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
-    });
-});
 
 var app = builder.Build();
 
@@ -892,8 +892,8 @@ using (var scope = app.Services.CreateScope())
 Log.Information("School Swedish API запущено!");
 Log.Information("База данных: {Connection}", builder.Configuration.GetConnectionString("DefaultConnection"));
 Log.Information("Environment: {Environment}", app.Environment.EnvironmentName);
-//app.UseHttpsRedirection();
-app.UseCors("AllowFrontend");
+app.UseHttpsRedirection();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -905,6 +905,10 @@ if (app.Environment.IsDevelopment())
     });
     Log.Information("Swagger доступен по /swagger");
 }
+
+app.UseRouting();
+
+app.UseCors("AllowMyFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
