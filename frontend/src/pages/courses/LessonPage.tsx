@@ -300,24 +300,24 @@ export const LessonPage = () => {
             )}
 
             <button
-  onClick={goToNextLesson}
-  disabled={!hasNext || (user?.role === 'Student' && !completed)}
-  style={{
-    padding: '12px 28px',
-    backgroundColor: (hasNext && (user?.role !== 'Student' || completed)) ? '#2f70d2' : '#f0f0f0',
-    color: (hasNext && (user?.role !== 'Student' || completed)) ? 'white' : '#999',
-    border: 'none',
-    borderRadius: '30px',
-    cursor: (hasNext && (user?.role !== 'Student' || completed)) ? 'pointer' : 'default',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}
->
-  Следующий урок →
-</button>
+                onClick={goToNextLesson}
+                disabled={!hasNext || (user?.role === 'Student' && !completed)}
+                style={{
+                  padding: '12px 28px',
+                  backgroundColor: (hasNext && (user?.role !== 'Student' || completed)) ? '#2f70d2' : '#f0f0f0',
+                  color: (hasNext && (user?.role !== 'Student' || completed)) ? 'white' : '#999',
+                  border: 'none',
+                  borderRadius: '30px',
+                  cursor: (hasNext && (user?.role !== 'Student' || completed)) ? 'pointer' : 'default',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                Следующий урок →
+            </button>
           </div>
         </div>
 
@@ -339,6 +339,28 @@ export const LessonPage = () => {
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                 📝 Пройти тест
+              </button>
+            </Link>
+          </div>
+        )}
+        {/* Кнопка создания теста (для админа и преподавателя) */}
+        {(user?.role === 'Admin' || user?.role === 'Teacher') && (
+          <div style={{ marginTop: '32px', textAlign: 'center' }}>
+            <Link to={`/course/${courseId}/lesson/${lessonId}/manage-test`}> {/* Уточните этот путь */}
+              <button style={{
+                padding: '14px 32px',
+                background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)', // Сделал зеленой для примера
+                color: 'white',
+                border: 'none',
+                borderRadius: '40px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                transition: 'transform 0.2s'
+              }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+                ➕ Создать тест
               </button>
             </Link>
           </div>

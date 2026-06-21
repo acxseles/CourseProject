@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiClient } from '../../shared/api/client';
 import { enrollmentsApi } from '../../shared/api/enrollments';
 import toast from 'react-hot-toast';
@@ -18,11 +18,13 @@ interface Course {
 
 export const CoursesCatalogPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<number[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [enrollingCourseId, setEnrollingCourseId] = useState<number | null>(null);
+  
   
   // Состояние для модального окна соглашения
   const [selectedCourseForPayment, setSelectedCourseForPayment] = useState<{ id: number; title: string; price: number } | null>(null);
@@ -62,10 +64,22 @@ export const CoursesCatalogPage = () => {
       });
   }, []);
 
- const handlePaymentClick = (courseId: number, courseTitle: string, coursePrice: number) => {
-  console.log('handlePaymentClick вызван', { courseId, courseTitle, coursePrice });
-  setSelectedCourseForPayment({ id: courseId, title: courseTitle, price: coursePrice });
-};
+  const handlePaymentClick = (courseId: number, courseTitle: string, coursePrice: number) => {
+    console.log('handlePaymentClick вызван', { courseId, courseTitle, coursePrice });
+
+    // Если курс бесплатный — мгновенно отправляем в интерфейс уроков
+    if (coursePrice === 0) {
+      toast.success('Добро пожаловать на курс!');
+
+      // (Опционально) Добавляем в стейт, чтобы кнопка в каталоге изменилась на "Перейти"
+      setEnrolledCourseIds(prev => [...prev, courseId]);
+
+      navigate(`/course/${courseId}/lessons`);
+    } else {
+      // Если платный — открываем модалку соглашения/оплаты
+      setSelectedCourseForPayment({ id: courseId, title: courseTitle, price: coursePrice });
+    }
+  };
 
 // Добавь в компонент, чтобы проверить, меняется ли состояние
 console.log('selectedCourseForPayment:', selectedCourseForPayment);

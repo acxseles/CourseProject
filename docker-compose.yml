@@ -8,10 +8,12 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command: --lower-case-table-names=1
     ports:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - school-network
     healthcheck:
@@ -28,8 +30,8 @@ services:
     restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=school-swedish-mysql;Port=3307;Database=school_swedish;User=root;Password=root;
-      - ConnectionStrings:DefaultConnection=Server=school-swedish-mysql;Port=3307;Database=school_swedish;User=root;Password=root;
+      # Используем внутренний порт 3306 и переменные для базы данных
+      - ConnectionStrings__DefaultConnection=Server=school-swedish-mysql;Port=3306;Database=${MYSQL_DATABASE};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};
       - JWT__Secret=super-secret-key-minimum-64-characters-long-for-jwt-security-1234567890
       - JWT__Issuer=school-swedish-api
       - JWT__Audience=school-swedish-client

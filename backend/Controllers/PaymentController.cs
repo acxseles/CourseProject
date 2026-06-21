@@ -16,7 +16,6 @@ namespace SchoolSwedishAPI.Controllers
         private readonly ILogger<PaymentController> _logger;
         private readonly HttpClient _httpClient;
 
-        // ТВОИ КЛЮЧИ ЮKASSA
         private readonly string _shopId = "1338519";
         private readonly string _secretKey = "test_qTu11_rp4Eyn0Syd6MP_ToQo1tl9tN5k-XpqgQoDCMA";
 
@@ -80,7 +79,7 @@ namespace SchoolSwedishAPI.Controllers
                     confirmation = new
                     {
                         type = "redirect",
-                        return_url = "http://localhost:5173/my-courses"
+                        return_url = "https://shool.bite-code.ru/courses"
                     },
                     description = $"Оплата курса \"{course.Title}\"",
                     metadata = new
