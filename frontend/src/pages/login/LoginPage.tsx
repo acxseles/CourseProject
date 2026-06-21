@@ -10,8 +10,18 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const { login, register, isLoading } = useAuthStore();
+
+  // Берем isAuthenticated (или user) из стора или хука, 
+  // чтобы отслеживать реальный статус авторизации
+  const { login, register, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+
+  // Эффект для надежного редиректа сразу после того, как стейт обновился
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,12 +31,16 @@ export const LoginPage = () => {
       } else {
         await register({ email, password, firstName, lastName });
       }
-      navigate('/dashboard');
+
+      // Если ваш zustand/redux стор НЕ обновляет isAuthenticated автоматически при 204,
+      // возможно, вам нужно вручную вызвать метод валидации токена здесь, например:
+      // await checkAuth(); 
+
     } catch (error) {
-      console.error('Ошибка:', error);
+      console.error('Ошибка при авторизации:', error);
     }
   };
-
+  
   return (
     <div style={{ 
       display: 'flex', 
