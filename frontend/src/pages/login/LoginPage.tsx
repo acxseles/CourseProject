@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../features/auth/hooks/useAuth';
-
+import { useAuthStore } from '../../features/auth/model/authStore';
 
 export const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,23 +8,31 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const { login, register, isLoading } = useAuth();
+
+  // ВНИМАНИЕ: Проверьте, как называется переменная в вашем useAuthStore. 
+  // Если там 'isAuth', то пишем: const { login, register, isAuth, isLoading } = useAuthStore();
+  const { login, register, isAuthenticated, isLoading } = useAuthStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isLogin) {
+        // Метод login обновит стейт, и useEffect сам перекинет на /dashboard
         await login({ email, password });
       } else {
         await register({ email, password, firstName, lastName });
       }
-      navigate('/dashboard');
     } catch (error) {
-      console.error('Ошибка:', error);
+      console.error('Ошибка при авторизации:', error);
     }
   };
-
   return (
     <div style={{ 
       display: 'flex', 
