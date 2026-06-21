@@ -14,6 +14,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   isCheckingAuth: boolean; // ← добавить
+  isAuthenticated: boolean;
   login: (data: { email: string; password: string }) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
@@ -26,16 +27,23 @@ export const useAuthStore = create<AuthState>((set) => ({
   isCheckingAuth: true, // ← начинаем с true
   error: null,
 
+  isAuthenticated: false,
+
   login: async (data) => {
     set({ isLoading: true, error: null });
     try {
       const response = await apiClient.post('/auth/login', data);
       console.log('✅ Логин успешен:', response.data);
-      
+
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      set({ user: response.data.user, isLoading: false, isCheckingAuth: false });
+
+      set({
+        user: response.data.user,
+        isAuthenticated: true, // Это мы исправили ранее
+        isLoading: false,
+        isCheckingAuth: false
+      });
     } catch (error: any) {
       console.error('❌ Ошибка логина:', error);
       set({ error: error.response?.data?.message || 'Ошибка входа', isLoading: false });
@@ -49,17 +57,28 @@ export const useAuthStore = create<AuthState>((set) => ({
       const response = await apiClient.post('/auth/register', data);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      set({ user: response.data.user, isLoading: false, isCheckingAuth: false });
+
+      set({
+        user: response.data.user,
+        isAuthenticated: true,
+        isLoading: false,
+        isCheckingAuth: false
+      });
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Ошибка регистрации', isLoading: false });
       throw error;
     }
   },
-
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    set({ user: null, error: null, isCheckingAuth: false });
+
+    set({
+      user: null,
+      isAuthenticated: false, 
+      error: null,
+      isCheckingAuth: false
+    });
   },
 
   checkAuth: async () => {

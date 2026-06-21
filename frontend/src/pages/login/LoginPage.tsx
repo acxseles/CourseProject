@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'; // <-- ИСПРАВЛЕНО: Добавили useEffect
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../features/auth/model/authStore';
-import { useAuth } from '../../features/auth/hooks/useAuth';
 
 export const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,12 +9,11 @@ export const LoginPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
-  // ИСПРАВЛЕНО: Добавили isLoading из Zustand стора (если он там есть)
-  // Если в сторе его нет, замените на локальный стейт: const [isLoading, setIsLoading] = useState(false);
+  // ВНИМАНИЕ: Проверьте, как называется переменная в вашем useAuthStore. 
+  // Если там 'isAuth', то пишем: const { login, register, isAuth, isLoading } = useAuthStore();
   const { login, register, isAuthenticated, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
-  // Эффект для надежного редиректа сразу после того, как стейт обновился
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
@@ -26,6 +24,7 @@ export const LoginPage = () => {
     e.preventDefault();
     try {
       if (isLogin) {
+        // Метод login обновит стейт, и useEffect сам перекинет на /dashboard
         await login({ email, password });
       } else {
         await register({ email, password, firstName, lastName });
@@ -34,7 +33,6 @@ export const LoginPage = () => {
       console.error('Ошибка при авторизации:', error);
     }
   };
-  
   return (
     <div style={{ 
       display: 'flex', 
